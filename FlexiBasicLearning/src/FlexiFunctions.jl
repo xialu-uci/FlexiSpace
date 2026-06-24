@@ -23,7 +23,8 @@ module FlexiFunctions
 #     return thetas[i] + (x - x_i) * (thetas[j] - thetas[i]) / (x_j - x_i)
 # end
 
-@inline function evaluate_decompress(x::Real, params::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true})
+@inline function evaluate_decompress(x::Real, params::AbstractVector{Float64})
+    # params::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true} < old type constraint for params
     N_intervals = length(params)
 
     # Early exit for edge cases
