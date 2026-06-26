@@ -1,12 +1,13 @@
 using Optimization, OptimizationEvolutionary
+using Statistics
 
 # example cmaes usage
-rosenbrock(x, p) = (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
-x0 = zeros(2)
-p = [1.0, 100.0]
-f = OptimizationFunction(rosenbrock)
-prob = SciMLBase.OptimizationProblem(f, x0, p, lb = [-1.0, -1.0], ub = [1.0, 1.0])
-sol = solve(prob, Evolutionary.CMAES(μ = 40, λ = 100))
+# rosenbrock(x, p) = (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
+# x0 = zeros(2)
+# p = [1.0, 100.0]
+# f = OptimizationFunction(rosenbrock)
+# prob = SciMLBase.OptimizationProblem(f, x0, p, lb = [-1.0, -1.0], ub = [1.0, 1.0])
+# sol = solve(prob, Evolutionary.CMAES(μ = 40, λ = 100))
 
 # as a kindness to future me, it may be useful to construct a learning problem type situation
 
@@ -40,7 +41,7 @@ function compute_adaptive_sigma0(ig; upper_bound_multiplier = 10.0)
 end
 
 # CMA-ES implementation
-function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0, single = false)
+function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     
     
     # Track best solution during optimization
@@ -68,7 +69,7 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0, single =
         end
         
         # # Evaluate fresh loss at current parameters
-        fresh_loss = flexi_loss(p.u, nothing)
+        fresh_loss = flexi_loss(p.u, nothing) # u is params
         # println("DEBUGGING: best loss so far: $best_loss, current loss: $fresh_loss at iter $current_iter")
         
         if fresh_loss < best_loss
@@ -114,16 +115,17 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0, single =
     
     
     sol = solve(prob, Evolutionary.CMAES(; cmaes_options...); 
-                callback=callback, maxiters=3000) # num iteration fed to here. also track best
-
+                callback=callback, maxiters=30000) # num iteration fed to here. also track best
+    # println(sol)
+   #  println(sol.minimizer)
     # Determine which solution to return: initial guess vs best found vs final solution
-    final_loss_from_sol = flexi_loss(collect(sol.minimizer), nothing)
+    final_loss_from_sol = flexi_loss(collect(sol.u), nothing)
     
     # Choose the best among: initial guess, best during optimization, final solution
     candidates = [
         (initial_loss, ig, "initial guess"),
         (best_loss, best_flexi_params, "best during optimization"), 
-        (final_loss_from_sol, collect(sol.minimizer), "final solution")
+        (final_loss_from_sol, collect(sol.u), "final solution")
     ]
     
     
