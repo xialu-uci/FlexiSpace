@@ -5,7 +5,10 @@ using LinearAlgebra
 using ComponentArrays
 using Random
 using JLD2
-using Optimization, OptimizationEvolutionary
+using Optim, Optimization, OptimizationEvolutionary
+using OptimizationOptimJL
+using Optimisers, Zygote
+using ChainRulesCore # can prob get rid of ChainRulesCore
 
 include("FlexiFunctions.jl")
 
@@ -43,6 +46,7 @@ include("get_loss.jl")
 # include learning protocols
 include("learning_protocols/base.jl")
 include("learning_protocols/cmaes.jl")
+include("learning_protocols/grad_desc.jl")
 
 
 

@@ -24,7 +24,7 @@ function make_ModelFlexi1(;flexi_dofs=5)
     )
 end
 
-function fw(x::Vector{Float64}, params, model::ModelFlexi1)
-    return FlexiFunctions.evaluate_decompress.(x, Ref(params)) # params.flex1_params
+function fw(x::AbstractVector, params, model::ModelFlexi1; gradient_mode = false)
+    return FlexiFunctions.evaluate_decompress.(x, Ref(params); gradient_mode=gradient_mode)
 end
 
