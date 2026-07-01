@@ -25,6 +25,7 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000)
     optf = Optimization.OptimizationFunction(flexi_loss, Optimization.AutoZygote())
     prob = Optimization.OptimizationProblem(optf, ig)
     sol = solve(prob, OptimizationOptimJL.GradientDescent(); callback=callback, maxiters=maxiters)
+    # could try other gradient descent optimizers (BFGS)
 
     println("Final loss: $(sol.objective)")
     return sol.u, loss_history
