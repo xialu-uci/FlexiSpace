@@ -38,6 +38,7 @@ function compute_adaptive_sigma0(ig; upper_bound_multiplier = 10.0)
     max_sigma0 = 1.0
     
     return clamp(combined_sigma0, min_sigma0, max_sigma0)
+    # return 1e-5 # for now
 end
 
 # CMA-ES implementation
@@ -60,6 +61,12 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     loss_history = Float64[]
     config = CallbackConfig() # just stores info for callback function in fields
     function callback(p, lossval)
+        if length(loss_history) < 5
+            println("iter 1: loss=$lossval")
+            println("p.u = ", p.u)
+            println("dist from ig = ", norm(p.u - ig))
+            
+        end
         push!(loss_history, lossval)
         current_iter = length(loss_history)
         
@@ -75,12 +82,13 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
         if fresh_loss < best_loss
             best_loss = fresh_loss
             best_flexi_params = deepcopy(p.u)
-            println("New best solution found at iter $current_iter with loss $best_loss")
+            # println("New best solution found at iter $current_iter with loss $best_loss")
         end
         
         if config.verbose && current_iter % config.print_frequency == 0
             qdrms = sqrt(lossval / config.constants.qdrms_divisor)
             println("In cmaes-on-flexi, iteration $current_iter: loss=$lossval, qdrms=$qdrms at $(now())")
+            println("sigma0: $cmaes_options")
             flush(stdout)
         end
         
@@ -90,8 +98,9 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
 
     optf = Optimization.OptimizationFunction(flexi_loss)
 
-    # Set up bounds for flexi parameters
-    flexi_bound = maximum(abs.(ig)) .* upper_bound_multiplier 
+    # Set up bounds for flexi parametersnumDof
+    # flexi_bound = maximum(abs.(ig)) .* upper_bound_multiplier 
+    flexi_bound = 0.5 # for cu, true max is always dof/srt(sum(1 to dof)(x^2)), but initial guess is 1/sqrt(dof)
 
     lb = 0.0*fill(flexi_bound, length(ig));#-1.0*fill(flexi_bound, length(ig))
     ub = +1.0*fill(flexi_bound, length(ig))
@@ -103,6 +112,8 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     cmaes_options = Dict{Symbol, Any}()
     cmaes_options[:μ] = 40 # from jun protocol.mu
     cmaes_options[:λ] =100  # from jun protocol.lambda
+    # cmaes_options[:λ] = max(100, 4 * length(ig))  # λ = 4 * number of parameters, at least 100
+    # cmaes_options[:μ] = div(cmaes_options[:λ], 2)
 
 # use default hyperparameters
  
@@ -115,8 +126,11 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     
     
     sol = solve(prob, Evolutionary.CMAES(; cmaes_options...); 
-                callback=callback, maxiters=30000) # num iteration fed to here. also track best
-    # println(sol)
+                callback=callback, maxiters=3e7) # num iteration fed to here. also track best
+    println("Ran $(length(loss_history)) iterations (maxiters was $(3e7))")
+    println("Final retcode: $(sol.retcode)")
+    println("CMAES fields: ", fieldnames(typeof(Evolutionary.CMAES())))    # println(sol)
+    println(sol.original)
    #  println(sol.minimizer)
     # Determine which solution to return: initial guess vs best found vs final solution
     final_loss_from_sol = flexi_loss(collect(sol.u), nothing)
