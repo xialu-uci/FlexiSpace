@@ -16,7 +16,7 @@ struct CallbackConfig
     constants::LearningConstants
 end
 
-CallbackConfig(; print_frequency=100, save_parameters=false, verbose=true, 
+CallbackConfig(; print_frequency=10, save_parameters=false, verbose=true, 
                constants=DEFAULT_LEARNING_CONSTANTS) = 
     CallbackConfig(print_frequency, save_parameters, verbose, constants)
 
