@@ -49,6 +49,10 @@ include("learning_protocols/base.jl")
 include("learning_protocols/cmaes.jl")
 include("learning_protocols/grad_desc.jl")
 
+# include functions for fitting and plotting
+include("fit_flexi.jl")
+include("sim_data.jl") # use naming functions in other files
+
 
 
 end # module FlexiBasicLearning
