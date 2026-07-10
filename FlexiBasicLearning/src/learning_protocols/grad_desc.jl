@@ -10,7 +10,7 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000)
 
     loss_history = Float64[]
     config = CallbackConfig()
-
+    
     function callback(p, lossval)
         push!(loss_history, lossval)
         current_iter = length(loss_history)

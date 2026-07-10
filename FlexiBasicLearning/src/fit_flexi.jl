@@ -29,7 +29,7 @@ datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
 # # fit with grad descent
 # gd_fit_params, gd_loss_history = FlexiBasicLearning.gradient_descent_learn(my_prob,ig)
 
-function fit_cmaes_and_gd(datafile, savedir, make_model)
+function fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
     @load datafile data
     num_points = size(data)[1]
     full = Vector{Bool}(trues(num_points))
@@ -40,8 +40,10 @@ function fit_cmaes_and_gd(datafile, savedir, make_model)
         mask = full
     )
 
-    
-    ig = deepcopy(my_model.params)
+    if isnothing(ig)
+        ig = deepcopy(my_model.params)
+    end
+    # ig = deepcopy(my_model.params)
     
     # check sensitivity 
     # base_loss = get_loss(ig; learning_problem=my_prob)

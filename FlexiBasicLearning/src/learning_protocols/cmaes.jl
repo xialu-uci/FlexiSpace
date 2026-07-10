@@ -1,4 +1,4 @@
-using Optimization, OptimizationEvolutionary
+using Optimization, OptimizationCMAEvolutionStrategy #OptimizationEvolutionary
 using Statistics
 
 # example cmaes usage
@@ -61,12 +61,12 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     loss_history = Float64[]
     config = CallbackConfig() # just stores info for callback function in fields
     function callback(p, lossval)
-        if length(loss_history) < 5
-            println("iter 1: loss=$lossval")
-            println("p.u = ", p.u)
-            println("dist from ig = ", norm(p.u - ig))
+        # if length(loss_history) < 5
+        #     println("iter 1: loss=$lossval")
+        #     println("p.u = ", p.u)
+        #     println("dist from ig = ", norm(p.u - ig))
             
-        end
+        # end
         push!(loss_history, lossval)
         current_iter = length(loss_history)
         
@@ -88,7 +88,7 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
         if config.verbose && current_iter % config.print_frequency == 0
             qdrms = sqrt(lossval / config.constants.qdrms_divisor)
             println("In cmaes-on-flexi, iteration $current_iter: loss=$lossval, qdrms=$qdrms at $(now())")
-            println("sigma0: $cmaes_options")
+            # println("sigma0: $cmaes_options")
             flush(stdout)
         end
         
@@ -100,7 +100,7 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
 
     # Set up bounds for flexi parametersnumDof
     # flexi_bound = maximum(abs.(ig)) .* upper_bound_multiplier 
-    flexi_bound = 0.5 # for cu, true max is always dof/srt(sum(1 to dof)(x^2)), but initial guess is 1/sqrt(dof)
+    flexi_bound = 1.0 # for cu, true max is always dof/srt(sum(1 to dof)(x^2)), but initial guess is 1/sqrt(dof)
 
     lb = 0.0*fill(flexi_bound, length(ig));#-1.0*fill(flexi_bound, length(ig))
     ub = +1.0*fill(flexi_bound, length(ig))
@@ -125,12 +125,12 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     println("Using adaptive sigma0 = $adaptive_sigma0 (computed from initial guess)")
     
     
-    sol = solve(prob, Evolutionary.CMAES(; cmaes_options...); 
-                callback=callback, maxiters=3e7) # num iteration fed to here. also track best
+    sol = solve(prob,  CMAEvolutionStrategyOpt(); 
+                callback=callback, maxiters=3e7, sigma0=cmaes_options[:sigma0]) # num iteration fed to here. also track best
     println("Ran $(length(loss_history)) iterations (maxiters was $(3e7))")
     println("Final retcode: $(sol.retcode)")
-    println("CMAES fields: ", fieldnames(typeof(Evolutionary.CMAES())))    # println(sol)
-    println(sol.original)
+    # println("CMAES fields: ", fieldnames(typeof(Evolutionary.CMAES())))    # println(sol)
+    #println(sol.original)
    #  println(sol.minimizer)
     # Determine which solution to return: initial guess vs best found vs final solution
     final_loss_from_sol = flexi_loss(collect(sol.u), nothing)
