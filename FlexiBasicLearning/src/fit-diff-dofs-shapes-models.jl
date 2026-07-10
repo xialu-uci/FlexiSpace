@@ -45,3 +45,4 @@ end
 # make_model = make_models[div(length(make_models), 2)]
 # result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model)
 # FlexiBasicLearning.plot_loss_and_fits(result, datafile, savedir)
+
