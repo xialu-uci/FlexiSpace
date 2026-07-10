@@ -8,7 +8,7 @@ using Random
 datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
 #
 
-function fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
+function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
     @load datafile data
     num_points = size(data)[1]
     full = Vector{Bool}(trues(num_points))
@@ -46,6 +46,7 @@ function fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
     result = Dict(
+        "save_dir" => savedir,
         "my_model" => my_model,
         "cmaes_fit_params" => cmaes_fit_params,
         "cmaes_loss_history" => cmaes_loss_history,
@@ -84,13 +85,14 @@ function plot_loss(cmaes_loss_history, gd_loss_history)
 end
 
 # --- combined driver: builds both plots from a fit result + raw data, and saves them ---
-function plot_loss_and_fits(result, datafile, savedir)
+function ig_plot_loss_and_fits(result, datafile)
     @load datafile data
     @load datafile true_func
     x = data[:, 1]
     y_data = data[:, 2]
     x_grid = collect(LinRange(0.0, 1.0, 500))
 
+    savedir = result["save_dir"]
     my_model = result["my_model"]
     cmaes_fit_params   = result["cmaes_fit_params"]
     cmaes_loss_history = result["cmaes_loss_history"]
@@ -116,17 +118,29 @@ function plot_loss_and_fits(result, datafile, savedir)
     return fig1, fig2
 end
 
+function plot_loss_and_fits(results, datafile) 
+    for result in results
+        ig_plot_loss_and_fits(result, datafile)
+    end
+
+end
+
 # new function: overload fit_cmaes_and_gd to take igs as a list of initial guesses, and return a list of results for each ig
 function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing])
     results = []
     for (idx, ig) in enumerate(igs)
         println("Fitting with initial guess $idx")
         subdir = joinpath(savedir, "fit_ig$(idx)")
-        result = fit_cmaes_and_gd(datafile, subdir, make_model; ig = ig)
+        result = ig_fit_cmaes_and_gd(datafile, subdir, make_model; ig = ig)
         push!(results, result)
     end
-    return results
+    # if length(results) == 1
+    #     return results[1]  # if only one result, return it directly
+    # else
+    return results  # otherwise, return the list of results
+    # end
 end
+   
 # test 1: not entering ig should use default ig from model
 # test 2: entering 1 ig should use that ig
 # test 3: entering multiple igs should run multiple fits and return a list of results
