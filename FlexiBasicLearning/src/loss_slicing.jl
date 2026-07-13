@@ -23,7 +23,7 @@ true_params = FlexiBasicLearning.crooked_flexi(5)
 print(true_params)
 # fit with cmaes and gd
 
-function loss_arc(i, true_params, learning_problem; plot = true)
+function loss_arc(i, true_params, learning_problem, savedir; plot = true)
     # plot loss as a function of param i, with param j determined by
     # the constraint norm(params) == 1, holding all other params fixed at true_params
     num_points = 100
@@ -40,7 +40,7 @@ function loss_arc(i, true_params, learning_problem; plot = true)
 
     if plot
         fig = Figure(size = (800, 600))
-        ax = Axis(fig[1, 1], xlabel = "Param $i", ylabel = "Loss",
+        ax = CairoMakie.Axis(fig[1, 1], xlabel = "Param $i", ylabel = "Loss",
                    title = "Loss Arc: Param $i")
         lines!(ax, param_range, loss_values)
         save(joinpath(savedir, "loss_arc_$(i).png"), fig)
@@ -48,7 +48,88 @@ function loss_arc(i, true_params, learning_problem; plot = true)
     return param_range, loss_values
 end
 
-function loss_slice(i, j, dofs, true_params, learning_problem; plot = true)
+function p_loss(ig, true_params, learning_problem, savedir; step = 0.02, plot = true)
+    # plot loss as a function of param i, with param j determined by
+    # the constraint norm(params) == 1, holding all other params fixed at true_params
+    between(p) = p.*true_params + (1.0 - p).*ig
+    p_range = range(0.0, 2.0, step=step) # I think this violates non-neg
+    p_valid = Float64[]
+    loss_values = Float64[]
+    for p in p_range
+        params = between(p)
+        if all(>=(0.0), params)
+            loss = FlexiBasicLearning.get_loss(params; learning_problem=learning_problem)
+            push!(p_valid, p)
+            push!(loss_values, loss)
+        end
+    end
+    println("num valid $(length(p_valid))")
+    # save ig and true_params to savedir
+    @save joinpath(savedir, "ig_and_true_params.jld2") ig true_params
+
+    # --- find local minima, including endpoints ---
+    local_min_idxs = Int[]
+    n = length(loss_values)
+    if n >= 1
+        if n == 1
+            push!(local_min_idxs, 1)
+        else
+            if loss_values[1] < loss_values[2]
+                push!(local_min_idxs, 1)
+            end
+            for i in 2:n-1
+                if loss_values[i] < loss_values[i-1] && loss_values[i] < loss_values[i+1]
+                    push!(local_min_idxs, i)
+                end
+            end
+            if loss_values[n] < loss_values[n-1]
+                push!(local_min_idxs, n)
+            end
+        end
+    end
+
+    if plot
+        fig = Figure(size = (800, 600))
+        ax = CairoMakie.Axis(fig[1, 1], xlabel = "p, where f(p) = p*θ_true + (1-p)*θ_ig", ylabel = "Loss",
+                   title = "Loss vs. p, ig at 0, truth at 1")
+        lines!(ax, p_valid, loss_values)
+
+        # --- annotate local minima ---
+        for idx in local_min_idxs
+            p_val = p_valid[idx]
+            loss_val = loss_values[idx]
+            scatter!(ax, [p_val], [loss_val], color = :red, markersize = 10)
+            text!(ax, p_val, loss_val;
+                  text = "p=$(round(p_val, digits=3))\nloss=$(round(loss_val, digits=4))",
+                  align = (:center, :bottom),
+                  offset = (0, 8),
+                  fontsize = 12,
+                  color = :red)
+        end
+
+        save(joinpath(savedir, "loss_between_ig_and_true.png"), fig)
+    end
+    return p_valid, loss_values
+end
+
+function loss_from_ig_to_true(igs, true_params, learning_problem, savedir; step = 0.02, plot = true)
+    # plot loss as a function of param i, with param j determined by
+    # the constraint norm(params) == 1, holding all other params fixed at true_params
+    results = []
+    for ig in igs
+        dist = norm(ig - true_params)
+        println("ig = $ig, dist from true_params = $dist, max ig = $(round(maximum(ig), digits=3))")
+
+        subdir = joinpath(savedir, "ig_dist$(round(dist, digits=3))_max$(round(maximum(ig), digits=3))")
+        mkpath(subdir)  # creates the directory if it doesn't already exist
+        p_range, loss_values = p_loss(ig, true_params, learning_problem, subdir; step=step, plot=plot)
+        push!(results, (ig=ig, dist=dist, p_range=p_range, loss_values=loss_values))
+    end
+    save(joinpath(savedir, "loss_from_ig_to_true.jld2"), "results", results)
+    return results
+end
+
+function loss_slice(i, j, dofs, true_params, learning_problem, savedir; plot = true)
     num_points = 100
     zeroed_ij = deepcopy(true_params)
     zeroed_ij[i] = 0.0
@@ -68,24 +149,25 @@ function loss_slice(i, j, dofs, true_params, learning_problem; plot = true)
 
     if plot
         fig = Figure(size = (800, 600))
-        ax = Axis(fig[1, 1], xlabel = "Param $i", ylabel = "Param $j", title = "Loss Slice")
-        hm = heatmap!(ax, param_range, param_range, loss_values', colormap = :viridis)
-        Colorbar(fig[1, 2], hm)
+        ax = CairoMakie.Axis(fig[1, 1], xlabel = "Param $i", ylabel = "Param $j", title = "Loss Slice")
+        hm = CairoMakie.heatmap!(ax, param_range, param_range, loss_values', colormap = :viridis)
+        CairoMakie.Colorbar(fig[1, 2], hm)
         save(joinpath(savedir, "loss_slice_$(i)_$(j).png"), fig)
     end
     return loss_values
 end
 
-all_loss_arc = []
-for i in 1:5
-    param_range, loss_values = loss_arc(i, true_params, learning_problem; plot = true)
-    push!(all_loss_arc, (i, param_range, loss_values))
-end
 
-all_loss_slice = []
-for i in 1:5, j in i+1:5
-    loss_values = loss_slice(i, j, 5, true_params, learning_problem; plot = true)
-    push!(all_loss_slice, (i, j, loss_values))
-end
+# all_loss_arc = []
+# for i in 1:5
+#     param_range, loss_values = loss_arc(i, true_params, learning_problem; plot = true)
+#     push!(all_loss_arc, (i, param_range, loss_values))
+# end
+
+# all_loss_slice = []
+# for i in 1:5, j in i+1:5
+#     loss_values = loss_slice(i, j, 5, true_params, learning_problem; plot = true)
+#     push!(all_loss_slice, (i, j, loss_values))
+# end
 
 
