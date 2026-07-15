@@ -5,9 +5,9 @@ using Random
 Random.seed!(1234)
 
 # # test 1: not entering ig should use default ig from model
-datafile = "../FlexiSpaceLocal/data/flexi1-5dof-20obs/sim_data_crooked.jld2"
-savedir = "../FlexiSpaceLocal/exp/07132026-test-mult-ig/flexi1-5dof-20obs/crooked"
-make_model = () -> FlexiBasicLearning.make_ModelFlexi1(flexi_dofs=5)
+datafile = "../FlexiSpaceLocal/data/flexi1-50dof-20obs/sim_data_crooked.jld2"
+savedir = "../FlexiSpaceLocal/exp/07132026-test-mult-ig/flexi1-50dof-20obs/crooked"
+make_model = () -> FlexiBasicLearning.make_ModelFlexi1(flexi_dofs=50)
 # result1 = FlexiBasicLearning.fit_cmaes_and_gd(datafile, joinpath(savedir, "test1"), make_model)
 # FlexiBasicLearning.plot_loss_and_fits(result1, datafile)
 
@@ -18,8 +18,8 @@ make_model = () -> FlexiBasicLearning.make_ModelFlexi1(flexi_dofs=5)
 
 # test 3: entering ig that is different from default ig should use the provided ig
 
-ig = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(5)
-ig_list = [ig, ig .+ 0.1*randn(5), ig .+ 0.2*randn(5)] # all igs must be non-negative, so we will floor them at 0.0
+ig = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(50)
+ig_list = [ig, ig .+ 0.1*randn(50), ig .+ 0.2*randn(50)] # all igs must be non-negative, so we will floor them at 0.0
 ig_list = [max.(ig, 0.0) for ig in ig_list]
 result3 = FlexiBasicLearning.fit_cmaes_and_gd(datafile, joinpath(savedir, "test3"), make_model; igs=ig_list)
 

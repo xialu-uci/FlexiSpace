@@ -5,6 +5,7 @@ using LinearAlgebra
 using ComponentArrays
 using Random
 using JLD2
+using Printf
 using Optim, Optimization, OptimizationEvolutionary
 using OptimizationOptimJL
 using Optimisers, Zygote

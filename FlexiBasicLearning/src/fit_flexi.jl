@@ -36,13 +36,13 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
     # end
     
     cmaes_fit_params, cmaes_loss_history = FlexiBasicLearning.cmaes_learn(my_prob, ig)
-    gd_fit_params, gd_loss_history = FlexiBasicLearning.gradient_descent_learn(my_prob, ig)
+    gd_fit_params, gd_loss_history, gd_grads = FlexiBasicLearning.gradient_descent_learn(my_prob, ig)
     # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
     # save cmaes results
     @save joinpath(savedir, "cmaes_fit.jld2") cmaes_fit_params cmaes_loss_history
     # save gd results
-    @save joinpath(savedir, "gd_fit.jld2") gd_fit_params gd_loss_history
+    @save joinpath(savedir, "gd_fit.jld2") gd_fit_params gd_loss_history gd_grads
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
     result = Dict(
@@ -51,7 +51,8 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
         "cmaes_fit_params" => cmaes_fit_params,
         "cmaes_loss_history" => cmaes_loss_history,
         "gd_fit_params" => gd_fit_params,
-        "gd_loss_history" => gd_loss_history
+        "gd_loss_history" => gd_loss_history,
+        "gd_grad_norm_history" => gd_grads
     )
     return result
 end
@@ -84,6 +85,16 @@ function plot_loss(cmaes_loss_history, gd_loss_history)
     return fig
 end
 
+# helper: plot gd grads
+function plot_grads(grads)
+    fig = Figure(size = (900, 400))
+    ax = CairoMakie.Axis(fig[1, 2], xlabel = "iteration", ylabel = "Gradient Norms",
+                title = "GD Gradient Norms During Fitting")
+    lines!(ax, grads, color = :blue, linewidth = 2)
+    # linkyaxes!(ax_cmaes, ax_gd)
+    return fig
+end
+
 # --- combined driver: builds both plots from a fit result + raw data, and saves them ---
 function ig_plot_loss_and_fits(result, datafile)
     @load datafile data
@@ -98,6 +109,7 @@ function ig_plot_loss_and_fits(result, datafile)
     cmaes_loss_history = result["cmaes_loss_history"]
     gd_fit_params      = result["gd_fit_params"]
     gd_loss_history    = result["gd_loss_history"]
+    gd_grads = result["gd_grad_norm_history"]
 
 
     y_true  = true_func.(x_grid)
@@ -113,9 +125,14 @@ function ig_plot_loss_and_fits(result, datafile)
     fig2 = plot_loss(cmaes_loss_history, gd_loss_history)
     save(joinpath(savedir, "loss_history.png"), fig2)
 
+    fig3 = plot_grads(gd_grads)
+    save(joinpath(savedir, "gd_grads.png"), fig3)
+
+
+
     println("Saved fit_overlay.png and loss_history.png to $savedir")
 
-    return fig1, fig2
+    return fig1, fig2, fig3
 end
 
 function plot_loss_and_fits(results, datafile) 
@@ -144,3 +161,33 @@ end
 # test 1: not entering ig should use default ig from model
 # test 2: entering 1 ig should use that ig
 # test 3: entering multiple igs should run multiple fits and return a list of results
+# function plot_flexi(flexi_params::AbstractVector{<:Real}; npoints::Int=500)
+#     """
+#     Generate a figure of the flexifunction defined by `flexi_params`.
+
+#     The flexifunction is computed using `FlexiFunctions.evaluate_decompress`
+#     on the interval [0,1]. A line plot is created and saved to
+#     `savedir/flexi_plot.png`. The figure is returned for further use.
+#     """
+
+#     # prepare evaluation points
+#     xs = range(0.0, 1.0; length=npoints)
+#     ys = [FlexiFunctions.evaluate_decompress(x, flexi_params) for x in xs]
+
+#     # create figure
+#     fig = Figure(size=(800, 400))
+#     ax = Makie.Axis(fig[1,1],
+#                     xlabel="x",
+#                     ylabel="flexi(x)",
+#                     title="Flexi function")
+#     lines!(ax, xs, ys, color=:blue, linewidth=2)
+#     ax.xgridvisible = true
+#     ax.ygridvisible = true
+
+#     # save and report
+#     # save_path = joinpath(savedir, "flexi_plot.png")
+#     # save(save_path, fig)
+#     # println("Flexi plot saved to: $save_path")
+
+#     return fig
+# end

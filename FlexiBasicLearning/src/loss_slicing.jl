@@ -69,6 +69,7 @@ function p_loss(ig, true_params, learning_problem, savedir; step = 0.02, plot = 
 
     # --- find local minima, including endpoints ---
     local_min_idxs = Int[]
+    # local_min_p = []
     n = length(loss_values)
     if n >= 1
         if n == 1
@@ -109,7 +110,81 @@ function p_loss(ig, true_params, learning_problem, savedir; step = 0.02, plot = 
 
         save(joinpath(savedir, "loss_between_ig_and_true.png"), fig)
     end
-    return p_valid, loss_values
+   if length(local_min_idxs) != 0
+        # find the global min among the local minima (by loss value)
+        global_min_pos = argmin(loss_values[local_min_idxs])
+        global_min_idx = local_min_idxs[global_min_pos]
+
+        n_vals = length(p_valid)
+
+        params_list = Vector{Vector{Float64}}()
+        labels = String[]
+        colors = Symbol[]
+        styles = Symbol[]      # :solid for minima, :dash for neighbors
+        seen_idxs = Set{Int}() # avoid plotting the same index twice
+
+        for i in local_min_idxs
+            is_global = (i == global_min_idx)
+            p_val = p_valid[i]
+
+            # --- the local/global min itself ---
+            push!(params_list, between(p_val))
+            push!(labels, is_global ? "global_min (p=$(round(p_val, digits=3)))" :
+                                        "local_min (p=$(round(p_val, digits=3)))")
+            push!(colors, is_global ? :gold : :gray)
+            push!(styles, :solid)
+            push!(seen_idxs, i)
+
+            # --- left neighbor ---
+            if i > 1 && !(i - 1 in seen_idxs)
+                p_left = p_valid[i - 1]
+                push!(params_list, between(p_left))
+                push!(labels, "neighbor (p=$(round(p_left, digits=3)))")
+                push!(colors, is_global ? :orange : :lightgray)
+                push!(styles, :dash)
+                push!(seen_idxs, i - 5)
+            end
+
+            # --- right neighbor ---
+            if i < n_vals && !(i + 1 in seen_idxs)
+                p_right = p_valid[i + 1]
+                push!(params_list, between(p_right))
+                push!(labels, "neighbor (p=$(round(p_right, digits=3)))")
+                push!(colors, is_global ? :orange : :lightgray)
+                push!(styles, :dash)
+                push!(seen_idxs, i + 5)
+            end
+        end
+
+        plot_flexi_comparison(params_list, labels, colors, styles, savedir, learning_problem)
+    end
+return p_valid, loss_values, local_min_idxs
+
+end
+
+# --- plot multiple flexi functions (piecewise curves) on one graph ---
+function plot_flexi_comparison(params_list, labels, colors, styles, savedir, learning_problem;
+                                 n_points = 200, filename = "flexi_comparison.png")
+    fig = Figure(size = (800, 600))
+    ax = CairoMakie.Axis(fig[1, 1], xlabel = "x", ylabel = "flexi(x)",
+               title = "Flexi functions at local minima and neighbors")
+
+    xs = range(0.0, 1.0, length = n_points)
+
+    for (params, label, color, style) in zip(params_list, labels, colors, styles)
+        ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs]
+        lines!(ax, xs, ys; label = label, color = color,
+               linestyle = style, linewidth = style == :solid ? 3 : 1.5)
+    end
+
+    # --- scatter the underlying data points ---
+    x_data = learning_problem.data[:, 1]
+    y_data = learning_problem.data[:, 2]
+    scatter!(ax, x_data, y_data; color = :black, markersize = 6, label = "data")
+
+    axislegend(ax, position = :rb)
+    save(joinpath(savedir, filename), fig)
+    return fig
 end
 
 function loss_from_ig_to_true(igs, true_params, learning_problem, savedir; step = 0.02, plot = true)
@@ -122,8 +197,8 @@ function loss_from_ig_to_true(igs, true_params, learning_problem, savedir; step 
 
         subdir = joinpath(savedir, "ig_dist$(round(dist, digits=3))_max$(round(maximum(ig), digits=3))")
         mkpath(subdir)  # creates the directory if it doesn't already exist
-        p_range, loss_values = p_loss(ig, true_params, learning_problem, subdir; step=step, plot=plot)
-        push!(results, (ig=ig, dist=dist, p_range=p_range, loss_values=loss_values))
+        p_range, loss_values,local_min_idxs = p_loss(ig, true_params, learning_problem, subdir; step=step, plot=plot)
+        push!(results, (ig=ig, dist=dist, p_range=p_range, loss_values=loss_values, local_min_idxs=local_min_idxs))
     end
     save(joinpath(savedir, "loss_from_ig_to_true.jld2"), "results", results)
     return results

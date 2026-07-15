@@ -9,10 +9,14 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000)
     end
 
     loss_history = Float64[]
+    grad_norm_history = Float64[]
     config = CallbackConfig()
     
     function callback(p, lossval)
         push!(loss_history, lossval)
+        if hasproperty(p, :grad) && !isnothing(p.grad)
+            push!(grad_norm_history, norm(p.grad))
+        end
         current_iter = length(loss_history)
         if config.verbose && current_iter % config.print_frequency == 0
             qdrms = sqrt(lossval / config.constants.qdrms_divisor)
@@ -28,5 +32,5 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000)
     # could try other gradient descent optimizers (BFGS)
 
     println("Final loss: $(sol.objective)")
-    return sol.u, loss_history
+    return sol.u, loss_history, grad_norm_history
 end
