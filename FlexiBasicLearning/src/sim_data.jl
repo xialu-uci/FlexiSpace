@@ -11,7 +11,12 @@ function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi_func, sha
     x = LinRange(0.0,1.0, num_points)
     y = true_func.(x)
     # add noise to y
-    noise = randn(num_points).*std # this makes it possible for vals outside [0,1]. Should I clamp?
+    # skip noise comp if std = 0.0
+    if std == 0.0
+        noise =0.0
+    else
+        noise = randn(num_points).*std # this makes it possible for vals outside [0,1]. Should I clamp?
+    end
     y_noisy = y .+ noise
     data = [x y_noisy]
     if !isnothing(save_name)
@@ -94,16 +99,16 @@ end
 # dofs = [5, 20, 50]
 # shapes = [crooked_flexi, cu_flexi, cd_flexi]
 # funcs = [make_flexi1_func, make_flexi1_alg1_func]
-num_points = 20
-dofs = [3,4]
-shapes = [crooked_flexi, cu_flexi, cd_flexi]
-funcs = [make_flexi1_func, make_flexi1_alg1_func]
+# num_points = 20
+# dofs = [3,4,5,20,50]
+# shapes = [crooked_flexi, cu_flexi, cd_flexi]
+# funcs = [make_flexi1_func, make_flexi1_alg1_func]
 
-for f in funcs, d in dofs, s in shapes
-    fname = func_name(f)
-    sname = shape_name(s)
-    save_name = joinpath("$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
-    sim_data(num_points, d; func_form = f, shape = s, save_name = save_name)
-end
+# for f in funcs, d in dofs, s in shapes
+#     fname = func_name(f)
+#     sname = shape_name(s)
+#     save_name = joinpath("no-noise/$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
+#     sim_data(num_points, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+# end
 
 # sim_data(20, 2, func_form = make_flexi1_func, shape = cu_flexi, )
