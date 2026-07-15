@@ -125,8 +125,8 @@ function ig_plot_loss_and_fits(result, datafile)
     fig2 = plot_loss(cmaes_loss_history, gd_loss_history)
     save(joinpath(savedir, "loss_history.png"), fig2)
 
-    fig3 = plot_grads(gd_grads)
-    save(joinpath(savedir, "gd_grads.png"), fig3)
+    # fig3 = plot_grads(gd_grads)
+    # save(joinpath(savedir, "gd_grads.png"), fig3)
 
 
 

@@ -154,8 +154,9 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
 
 
     # convergence_status = sol.retcode == :success ? :converged : :max_iterations
-    
-    return chosen_flexi_params, loss_history
+    # TODO: modify to be a result with fields
+    result = (chosen_flexi_params = chosen_flexi_params, loss_history = loss_history)
+    return result
 end# CMA-ES Learning Protocol Implementation
 
 
