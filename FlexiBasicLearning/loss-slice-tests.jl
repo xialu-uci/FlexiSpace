@@ -27,7 +27,7 @@ ig = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(5)
 igs = [ig, ig .+ 0.1*randn(5), ig .+ 0.2*randn(5)] # all igs must be non-negative, so we will floor them at 0.0
 igs = [max.(ig, 0.0) for ig in igs] #
 
-arcs = FlexiBasicLearning.loss_from_ig_to_true(igs, true_params, learning_problem, savedir; num_points=100, plot=true);
+arcs = FlexiBasicLearning.loss_from_ig_to_true(igs, true_params, learning_problem, savedir; step = 0.02, plot=true);
 
 # want to print each change in direction of loss for each result
 # print (p,loss)_i if (p,loss)(i-1) > (p,loss)i AND (p<loss)(i+1)< (p,loss)i or vice versa

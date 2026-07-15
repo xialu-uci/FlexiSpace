@@ -90,8 +90,12 @@ end
 # func-#dof-#obs/sim_data_shape
 
 
+# num_points = 20
+# dofs = [5, 20, 50]
+# shapes = [crooked_flexi, cu_flexi, cd_flexi]
+# funcs = [make_flexi1_func, make_flexi1_alg1_func]
 num_points = 20
-dofs = [5, 20, 50]
+dofs = [3,4]
 shapes = [crooked_flexi, cu_flexi, cd_flexi]
 funcs = [make_flexi1_func, make_flexi1_alg1_func]
 
@@ -101,3 +105,5 @@ for f in funcs, d in dofs, s in shapes
     save_name = joinpath("$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
     sim_data(num_points, d; func_form = f, shape = s, save_name = save_name)
 end
+
+# sim_data(20, 2, func_form = make_flexi1_func, shape = cu_flexi, )
