@@ -144,7 +144,7 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     
     
     best_candidate_idx = argmin([x[1] for x in candidates])
-    chosen_loss, chosen_flexi_params, chosen_source = candidates[best_candidate_idx]
+    chosen_loss, fit_params, chosen_source = candidates[best_candidate_idx]
     
     
     println("CMA-ES: Chose $chosen_source with loss $chosen_loss")
