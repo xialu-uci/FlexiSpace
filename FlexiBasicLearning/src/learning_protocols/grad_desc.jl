@@ -52,9 +52,9 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     # TODO: modify to be a result with fields
     if slow
         # return sol.u, loss_history, grad_norm_history, grads, params, config.print_frequency
-        result =  (soln = sol.u, loss_history = loss_history, grads = grads, grads = params, save_it = config.print_frequency)
+        result =  (fit_params = sol.u, loss_history = loss_history, grads = grads, grads = params, save_it = config.print_frequency)
     else
-        result = (soln = sol.u, loss_history = loss_history)
+        result = (fit_params = sol.u, loss_history = loss_history)
     end
     return result
     

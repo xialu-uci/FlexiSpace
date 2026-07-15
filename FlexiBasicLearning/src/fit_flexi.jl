@@ -35,24 +35,21 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
     #     end
     # end
     
-    cmaes_fit_params, cmaes_loss_history = FlexiBasicLearning.cmaes_learn(my_prob, ig)
-    gd_fit_params, gd_loss_history, gd_grads = FlexiBasicLearning.gradient_descent_learn(my_prob, ig)
+    cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
+    gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig)
     # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
     # save cmaes results
-    @save joinpath(savedir, "cmaes_fit.jld2") cmaes_fit_params cmaes_loss_history
+    @save joinpath(savedir, "cmaes_result.jld2") cmaes_result
     # save gd results
-    @save joinpath(savedir, "gd_fit.jld2") gd_fit_params gd_loss_history gd_grads
+    @save joinpath(savedir, "gd_result.jld2") gd_result
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
     result = Dict(
         "save_dir" => savedir,
         "my_model" => my_model,
-        "cmaes_fit_params" => cmaes_fit_params,
-        "cmaes_loss_history" => cmaes_loss_history,
-        "gd_fit_params" => gd_fit_params,
-        "gd_loss_history" => gd_loss_history,
-        "gd_grad_norm_history" => gd_grads
+        "cmaes_result" => cmaes_result,
+        "gd_result" => gd_result
     )
     return result
 end
@@ -105,11 +102,12 @@ function ig_plot_loss_and_fits(result, datafile)
 
     savedir = result["save_dir"]
     my_model = result["my_model"]
-    cmaes_fit_params   = result["cmaes_fit_params"]
-    cmaes_loss_history = result["cmaes_loss_history"]
-    gd_fit_params      = result["gd_fit_params"]
-    gd_loss_history    = result["gd_loss_history"]
-    gd_grads = result["gd_grad_norm_history"]
+    cmaes_result   = result["cmaes_result"]
+    cmaes_loss_history = cmaes_result.loss_history
+    cmaes_fit_params = cmaes_result.fit_params
+    gd_result = result["gd_result"]
+    gd_loss_history = gd_result.loss_history
+    gd_fit_params = gd_result.fit_params
 
 
     y_true  = true_func.(x_grid)
