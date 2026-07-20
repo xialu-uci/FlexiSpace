@@ -2,26 +2,26 @@ using FlexiBasicLearning
 using JLD2
 using CairoMakie
 
-# load simplest sim data
-datafile = "../FlexiSpaceLocal/data/flexi1alg1-5dof-20obs/sim_data_crooked.jld2"
-savedir = "../FlexiSpaceLocal/exp/07062026/flexi1alg1-5dof-20obs/crooked"
-make_model = () -> FlexiBasicLearning.make_ModelFlexiAlg(flexi_dofs=5)
-mkpath(savedir)  # creates the directory if it doesn't already exist
+# # load simplest sim data
+# datafile = "../FlexiSpaceLocal/data/flexi1alg1-5dof-20obs/sim_data_crooked.jld2"
+# savedir = "../FlexiSpaceLocal/exp/07062026/flexi1alg1-5dof-20obs/crooked"
+# make_model = () -> FlexiBasicLearning.make_ModelFlexiAlg(flexi_dofs=5)
+# mkpath(savedir)  # creates the directory if it doesn't already exist
 
-@load datafile data
-num_points = size(data)[1]
-# no mask for now
-full = Vector{Bool}(trues(num_points))
-learning_problem = LearningProblem(
-    data = data,
-    model = make_model(),
-    mask = full
-)
+# @load datafile data
+# num_points = size(data)[1]
+# # no mask for now
+# full = Vector{Bool}(trues(num_points))
+# learning_problem = LearningProblem(
+#     data = data,
+#     model = make_model(),
+#     mask = full
+# )
 
-true_params = FlexiBasicLearning.crooked_flexi(5)
+# true_params = FlexiBasicLearning.crooked_flexi(5)
 
-print(true_params)
-# fit with cmaes and gd
+# print(true_params)
+# # fit with cmaes and gd
 
 function loss_arc(i, true_params, learning_problem, savedir; plot = true)
     # plot loss as a function of param i, with param j determined by

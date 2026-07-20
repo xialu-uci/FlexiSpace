@@ -2,7 +2,7 @@
 using FlexiBasicLearning
 using JLD2
 
-function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi_func, shape = crooked_flexi, save_name = nothing)
+function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = crooked_flexi, save_name = nothing)
 
     # helper true flexi params
     #true_params = shape(dofs)
@@ -99,16 +99,16 @@ end
 # dofs = [5, 20, 50]
 # shapes = [crooked_flexi, cu_flexi, cd_flexi]
 # funcs = [make_flexi1_func, make_flexi1_alg1_func]
-# num_points = 20
-# dofs = [3,4,5,20,50]
-# shapes = [crooked_flexi, cu_flexi, cd_flexi]
-# funcs = [make_flexi1_func, make_flexi1_alg1_func]
+num_points = 20
+dofs = [3,4,5,20,50]
+shapes = [crooked_flexi, cu_flexi, cd_flexi]
+funcs = [make_flexi1_func, make_flexi1_alg1_func]
 
-# for f in funcs, d in dofs, s in shapes
-#     fname = func_name(f)
-#     sname = shape_name(s)
-#     save_name = joinpath("no-noise/$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
-#     sim_data(num_points, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
-# end
+for f in funcs, d in dofs, s in shapes
+    fname = func_name(f)
+    sname = shape_name(s)
+    save_name = joinpath("no-noise/$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
+    sim_data(num_points, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+end
 
-# sim_data(20, 2, func_form = make_flexi1_func, shape = cu_flexi, )
+sim_data(20, 2, func_form = make_flexi1_func, shape = cu_flexi, )
