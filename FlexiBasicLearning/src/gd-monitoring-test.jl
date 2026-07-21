@@ -20,4 +20,4 @@ result1_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result1, gt)
 # plot stuff
 FlexiBasicLearning.plot_gd_tracker(result1_gd_tracker, savedir)
 
-FlexiBasicLearning.plot_param_history(result1_gd, savedir, gt, datafile)
+FlexiBasicLearning.plot_param_history(gd_result1, savedir, gt, datafile)

@@ -5,8 +5,10 @@ using JLD2
 function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = crooked_flexi, save_name = nothing)
 
     # helper true flexi params
-    #true_params = shape(dofs)
-    true_func = func_form(dofs; shape = shape)
+    true_params = shape(dofs)
+    # true_func = func_form(dofs; shape = shape)
+
+    true_func = func_form(true_params)
     # num_points must be in
     x = LinRange(0.0,1.0, num_points)
     y = true_func.(x)
@@ -53,16 +55,28 @@ function cd_flexi(dofs)
     return params / LinearAlgebra.norm(params)
 end
 
-# test: passed
-function make_flexi1_func(dofs; shape = crooked_flexi)
-    params = shape(dofs)
+# # test: passed
+# function make_flexi1_func(dofs; shape = crooked_flexi)
+#     params = shape(dofs)
+#     return x -> FlexiFunctions.evaluate_decompress(x, params)
+# end
+
+
+# function make_flexi1_alg1_func(dofs; shape = crooked_flexi)
+#     params = shape(dofs)
+#     return x -> x .* FlexiFunctions.evaluate_decompress(x, params)
+# end
+
+# try this instead? useful for other stuff
+function make_flexi1_func(params)
     return x -> FlexiFunctions.evaluate_decompress(x, params)
 end
 
-function make_flexi1_alg1_func(dofs; shape = crooked_flexi)
-    params = shape(dofs)
+
+function make_flexi1_alg1_func(params)
     return x -> x .* FlexiFunctions.evaluate_decompress(x, params)
 end
+
 # small_data = sim_data(10, 5)
 
 # NUM_POINTS = 100
