@@ -40,6 +40,7 @@ export CallbackConfig, LearningConstants
 # include models
 include("models/def_flexi_basic.jl")
 include("models/def_flexi_alg.jl")
+include("models/def_flexi_ode.jl")
 
 # include helpers
 include("get_loss.jl")
