@@ -8,7 +8,7 @@ using Random
 datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
 #
 
-function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
+function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_parameters)
     @load datafile data
     num_points = size(data)[1]
     full = Vector{Bool}(trues(num_points))
@@ -35,24 +35,21 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing)
     #     end
     # end
     
-    cmaes_fit_params, cmaes_loss_history = FlexiBasicLearning.cmaes_learn(my_prob, ig)
-    gd_fit_params, gd_loss_history, gd_grads = FlexiBasicLearning.gradient_descent_learn(my_prob, ig)
+    cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
+    gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; save_parameters = save_parameters)
     # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
     # save cmaes results
-    @save joinpath(savedir, "cmaes_fit.jld2") cmaes_fit_params cmaes_loss_history
+    @save joinpath(savedir, "cmaes_result.jld2") cmaes_result
     # save gd results
-    @save joinpath(savedir, "gd_fit.jld2") gd_fit_params gd_loss_history gd_grads
+    @save joinpath(savedir, "gd_result.jld2") gd_result
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
     result = Dict(
         "save_dir" => savedir,
         "my_model" => my_model,
-        "cmaes_fit_params" => cmaes_fit_params,
-        "cmaes_loss_history" => cmaes_loss_history,
-        "gd_fit_params" => gd_fit_params,
-        "gd_loss_history" => gd_loss_history,
-        "gd_grad_norm_history" => gd_grads
+        "cmaes_result" => cmaes_result,
+        "gd_result" => gd_result
     )
     return result
 end
@@ -105,11 +102,12 @@ function ig_plot_loss_and_fits(result, datafile)
 
     savedir = result["save_dir"]
     my_model = result["my_model"]
-    cmaes_fit_params   = result["cmaes_fit_params"]
-    cmaes_loss_history = result["cmaes_loss_history"]
-    gd_fit_params      = result["gd_fit_params"]
-    gd_loss_history    = result["gd_loss_history"]
-    gd_grads = result["gd_grad_norm_history"]
+    cmaes_result   = result["cmaes_result"]
+    cmaes_loss_history = cmaes_result.loss_history
+    cmaes_fit_params = cmaes_result.fit_params
+    gd_result = result["gd_result"]
+    gd_loss_history = gd_result.loss_history
+    gd_fit_params = gd_result.fit_params
 
 
     y_true  = true_func.(x_grid)
@@ -125,14 +123,14 @@ function ig_plot_loss_and_fits(result, datafile)
     fig2 = plot_loss(cmaes_loss_history, gd_loss_history)
     save(joinpath(savedir, "loss_history.png"), fig2)
 
-    fig3 = plot_grads(gd_grads)
-    save(joinpath(savedir, "gd_grads.png"), fig3)
+    # fig3 = plot_grads(gd_grads)
+    # save(joinpath(savedir, "gd_grads.png"), fig3)
 
 
 
     println("Saved fit_overlay.png and loss_history.png to $savedir")
 
-    return fig1, fig2, fig3
+    return fig1, fig2
 end
 
 function plot_loss_and_fits(results, datafile) 
@@ -143,12 +141,12 @@ function plot_loss_and_fits(results, datafile)
 end
 
 # new function: overload fit_cmaes_and_gd to take igs as a list of initial guesses, and return a list of results for each ig
-function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing])
+function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing], save_parameters = false)
     results = []
     for (idx, ig) in enumerate(igs)
         println("Fitting with initial guess $idx")
         subdir = joinpath(savedir, "fit_ig$(idx)")
-        result = ig_fit_cmaes_and_gd(datafile, subdir, make_model; ig = ig)
+        result = ig_fit_cmaes_and_gd(datafile, subdir, make_model; ig = ig, save_parameters)
         push!(results, result)
     end
     # if length(results) == 1

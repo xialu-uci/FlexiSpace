@@ -2,22 +2,36 @@
 using Optimization
 using OptimizationOptimJL
 
-function gradient_descent_learn(learning_problem, ig; maxiters=10000)
+function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_frequency = 100, save_parameters = false)
 
     function flexi_loss(params, p)
         return get_loss(params; learning_problem=learning_problem, gradient_mode=true)
     end
 
     loss_history = Float64[]
-    grad_norm_history = Float64[]
-    config = CallbackConfig()
+    # grad_norm_history = Float64[]
     
+    config = CallbackConfig(;print_frequency = print_frequency, save_parameters = save_parameters)
+
+    parameter_history = config.save_parameters ? [] : nothing
+    gradient_history = config.save_parameters ? [] : nothing
+
+    
+    
+    # TODO: modify to use config
     function callback(p, lossval)
         push!(loss_history, lossval)
-        if hasproperty(p, :grad) && !isnothing(p.grad)
-            push!(grad_norm_history, norm(p.grad))
-        end
         current_iter = length(loss_history)
+        
+
+        if config.save_parameters
+            # if current_iter % config.print_frequency == 0
+            push!(gradient_history, copy(p.grad))
+            push!(parameter_history, copy(p.u))
+                # push!(save_its, )
+            # end   
+        end
+
         if config.verbose && current_iter % config.print_frequency == 0
             qdrms = sqrt(lossval / config.constants.qdrms_divisor)
             println("In grad_descent, iteration $current_iter: loss=$lossval, qdrms=$qdrms at $(now())")
@@ -32,5 +46,14 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000)
     # could try other gradient descent optimizers (BFGS)
 
     println("Final loss: $(sol.objective)")
-    return sol.u, loss_history, grad_norm_history
+
+    # TODO: modify to be a result with fields
+    if config.save_parameters
+        # return sol.u, loss_history, grad_norm_history, grads, params, config.print_frequency
+        result =  (fit_params = sol.u, loss_history = loss_history, gradient_history = gradient_history, parameter_history = parameter_history) # save_freq = config.print_frequency
+    else
+        result = (fit_params = sol.u, loss_history = loss_history)
+    end
+    return result
+    
 end
