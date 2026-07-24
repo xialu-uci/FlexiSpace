@@ -3,7 +3,7 @@ using Optimization
 using OptimizationOptimJL
 using SciMLSensitivity
 
-function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_frequency = 100, save_parameters = false)
+function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_frequency = 1000, save_parameters = false)
 
     function flexi_loss(params, p)
         return get_loss(params; learning_problem=learning_problem, gradient_mode=true)
