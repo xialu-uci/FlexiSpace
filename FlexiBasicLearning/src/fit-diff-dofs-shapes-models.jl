@@ -5,7 +5,7 @@ using CairoMakie
 
 # setting up dirs
 expdir = "../FlexiSpaceLocal/exp/07232026/"
-datadir = "../FlexiSpaceLocal/data/no-noise"
+datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 savedirs = []
 datafiles = []
 make_models = []
