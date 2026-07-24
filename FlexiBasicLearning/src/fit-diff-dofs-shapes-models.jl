@@ -39,7 +39,7 @@ for (datafile, savedir, make_model) in zip(datafiles, savedirs, make_models)
     result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model)
     println("Finished fitting for datafile: $datafile")
     # plot using result Dict
-    FlexiBasicLearning.plot_loss_and_fits(result, datafile, savedir) # TODO: plotting doesn't used savedir anymore
+    FlexiBasicLearning.plot_loss_and_fits(result, datafile) # TODO: plotting doesn't used savedir anymore
 end
 
 # savedir = savedirs[div(length(savedirs), 2)]

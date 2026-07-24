@@ -61,10 +61,11 @@ end
 function plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = "Flexi fit comparison")
     fig = Figure(size = (800, 500))
     ax = CairoMakie.Axis(fig[1, 1], xlabel = "x", ylabel = "y", title = title)
-    CairoMakie.scatter!(ax, x, y_data, label = "noisy data", markersize = 4, color = (:gray, 0.4))
     CairoMakie.lines!(ax, x_grid, y_true,  label = "true",             linewidth = 2, color = :black, linestyle = :dash)
     CairoMakie.lines!(ax, x_grid, y_cmaes, label = "cmaes fit",        linewidth = 2, color = :red)
     CairoMakie.lines!(ax, x_grid, y_gd,    label = "grad descent fit", linewidth = 2, color = :blue)
+    CairoMakie.scatter!(ax, x, y_data, label = "noisy data", markersize = 5, color = (:gray, 0.4))
+
     axislegend(ax, position = :rb)
     return fig
 end
@@ -112,7 +113,9 @@ function ig_plot_loss_and_fits(result, datafile)
 
     y_true  = true_func.(x_grid)
     y_cmaes = fw(x_grid, cmaes_fit_params, my_model)
-    y_gd    = fw(x_grid, gd_fit_params, my_model)
+    # println(y_cmaes)
+    y_gd = fw(x_grid, gd_fit_params, my_model)
+    # println(y_gd)
     mkpath(savedir)
 
     

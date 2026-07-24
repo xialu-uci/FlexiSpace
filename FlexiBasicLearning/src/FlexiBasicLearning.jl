@@ -10,6 +10,7 @@ using Optim, Optimization, OptimizationEvolutionary
 using OptimizationOptimJL
 using Optimisers, Zygote
 using ChainRulesCore # can prob get rid of ChainRulesCore
+using SciMLSensitivity
 
 include("FlexiFunctions.jl")
 

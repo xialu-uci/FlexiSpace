@@ -39,8 +39,10 @@ function fw(x::AbstractVector, params, model::ModelFlexiODE; gradient_mode = fal
     rhs = make_rhs(model; gradient_mode = gradient_mode)
     tspan = (0.0,1.0)
     prob = ODEProblem(rhs, model.u0,tspan, params)
-    sol = solve(prob,Tsit5())
-    # return sol values corresponding to t = x?
-    # println(size(sol(x)))
-    return vec(sol(x))
+    sol = solve(prob, Tsit5();
+        saveat = x,
+        sensealg = InterpolatingAdjoint(autojacvec = ZygoteVJP()))
+
+    y = vec(Array(sol))   # states x length(x), then transpose -> length(x) x states
+    return y
 end
