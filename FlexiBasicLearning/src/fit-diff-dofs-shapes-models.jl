@@ -12,7 +12,8 @@ make_models = []
 # prefixes = []  # to hold the prefixes for each combination of func, dof, shape
 
 num_points = 20
-dofs = [3, 4, 5, 20, 50]
+# dofs = [3, 4, 5, 20, 50]
+dofs = [3]
 shapes = [FlexiBasicLearning.crooked_flexi, FlexiBasicLearning.cu_flexi, FlexiBasicLearning.cd_flexi]
 # funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func]
 funcs = [FlexiBasicLearning.make_flexi1_ode1_func] # test for 0723
@@ -36,10 +37,11 @@ end
 
 for (datafile, savedir, make_model) in zip(datafiles, savedirs, make_models)
     println("Fitting for datafile: $datafile")
-    result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model)
+    result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model, save_parameters = true)
     println("Finished fitting for datafile: $datafile")
     # plot using result Dict
     FlexiBasicLearning.plot_loss_and_fits(result, datafile) # TODO: plotting doesn't used savedir anymore
+    FlexiBasicLearning.end_to_end_gd_tracking(result, datafile)
 end
 
 # savedir = savedirs[div(length(savedirs), 2)]
