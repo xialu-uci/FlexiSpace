@@ -47,7 +47,8 @@ function crooked_flexi(dofs)
     return params / LinearAlgebra.norm(params)
 end
 
-function cu_flexi(dofs)
+# TODO: something looks weird about gt flexi for y' = flexi(y) with dofs = 3 for cu and cd shapes.
+function cu_flexi(dofs) 
     params = collect(1:dofs)
     return params / LinearAlgebra.norm(params)
 end
