@@ -27,7 +27,7 @@ function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, sh
         savedir = "../FlexiSpaceLocal/data"
         full_path = joinpath(savedir, save_name)
         mkpath(dirname(full_path))
-        @save full_path data true_func
+        @save full_path data true_func true_params
         println("Saved $save_name to $savedir")
     end
     return data
@@ -47,7 +47,8 @@ function crooked_flexi(dofs)
     return params / LinearAlgebra.norm(params)
 end
 
-function cu_flexi(dofs)
+# TODO: something looks weird about gt flexi for y' = flexi(y) with dofs = 3 for cu and cd shapes.
+function cu_flexi(dofs) 
     params = collect(1:dofs)
     return params / LinearAlgebra.norm(params)
 end
@@ -151,7 +152,7 @@ funcs = [make_flexi1_ode1_func]
 for f in funcs, d in dofs, s in shapes
     fname = func_name(f)
     sname = shape_name(s)
-    save_name = joinpath("no-noise/$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
+    save_name = joinpath("w_true_params/no-noise/$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
     sim_data(num_points, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
 end
 

@@ -35,8 +35,15 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_p
     #     end
     # end
     
+    t0 = time()
     cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
+    cmaes_time = time() - t0
+    println("cmaes time:$cmaes_time ") 
+    t1 = time() 
     gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; save_parameters = save_parameters)
+    gd_time = time() - t1
+    println("gd time:$gd_time ")
+
     # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
     # save cmaes results
@@ -49,7 +56,9 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_p
         "save_dir" => savedir,
         "my_model" => my_model,
         "cmaes_result" => cmaes_result,
-        "gd_result" => gd_result
+        "gd_result" => gd_result,
+        "cmaes_time" => cmaes_time,
+        "gd_time" => gd_time
     )
     return result
 end

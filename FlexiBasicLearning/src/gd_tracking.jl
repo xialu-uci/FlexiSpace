@@ -4,6 +4,20 @@
 using FlexiBasicLearning
 using CairoMakie
 
+function end_to_end_gd_tracking(results_all_ig, datafile)
+    @load datafile true_params
+    for result in results_all_ig
+        gd_result = result["gd_result"]
+        savedir = result["save_dir"]
+       
+        result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_params)
+        # plot stuff
+        plot_gd_tracker(result_gd_tracker, savedir)
+        plot_param_history(gd_result, savedir, true_params, datafile)
+    end
+
+end
+
 function gd_tracking(result, gt)
     norms = LinearAlgebra.norm.(result.gradient_history)
     dots = dot.(result.gradient_history, Ref(gt))
