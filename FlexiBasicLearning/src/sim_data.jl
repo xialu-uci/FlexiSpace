@@ -147,7 +147,8 @@ num_points = 20
 # num_points = 20
 dofs = [3,4,5,20,50]
 shapes = [crooked_flexi, cu_flexi, cd_flexi]
-funcs = [make_flexi1_ode1_func]
+# funcs = [make_flexi1_ode1_func]
+funcs = [make_flexi1_func, make_flexi1_alg1_func]
 
 for f in funcs, d in dofs, s in shapes
     fname = func_name(f)
