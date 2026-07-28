@@ -105,8 +105,10 @@ end
 # --- combined driver: builds both plots from a fit result + raw data, and saves them ---
 function ig_plot_loss_and_fits(result, datafile)
     @load datafile data
-    @load datafile true_func
+    @load datafile func_form
     @load datafile true_params
+
+    true_func = func_form(true_params)
 
     x = data[:, 1]
     y_data = data[:, 2]
@@ -123,12 +125,12 @@ function ig_plot_loss_and_fits(result, datafile)
 
 
     y_true  = true_func.(x_grid)
-    flexi_true = FlexiBasicLearning.evaluate_decompress.(x_grid, Ref(true_params))
+    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(true_params))
     y_cmaes = fw(x_grid, cmaes_fit_params, my_model)
-    flexi_cmaes = FlexiBasicLearning.evaluate_decompress.(x_grid, Ref(cmaes_fit_params))
+    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(cmaes_fit_params))
     # println(y_cmaes)
     y_gd = fw(x_grid, gd_fit_params, my_model)
-    flexi_gd = FlexiBasicLearning.evaluate_decompress.(x_grid, Ref(gd_fit_params))
+    flexi_gd = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(gd_fit_params))
 
     # println(y_gd)
     mkpath(savedir)
@@ -144,8 +146,8 @@ function ig_plot_loss_and_fits(result, datafile)
     save(joinpath(savedir, "loss_history.png"), fig2)
 
     title3 = "Flexifunction only comparison (dofs=$(length(my_model.params)))"
-    fig3 = plot_fits([], [], x_grid, y_true, y_cmaes, y_gd; title = title3) # don't plot datapoints
-    save(joinpath(savedir, "flexi_overlay.png"), fig1)
+    fig3 = plot_fits([0.0], [0.0], x_grid, flexi_true, flexi_cmaes, flexi_gd; title = title3) # don't plot datapoints
+    save(joinpath(savedir, "flexi_overlay.png"), fig3)
 
 
     # fig3 = plot_grads(gd_grads)

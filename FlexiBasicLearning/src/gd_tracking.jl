@@ -13,7 +13,7 @@ function end_to_end_gd_tracking(results_all_ig, datafile; func_form = FlexiBasic
         result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_params)
         # plot stuff
         plot_gd_tracker(result_gd_tracker, savedir)
-        plot_param_history(gd_result, savedir, true_params, datafile; func_form = func_form, func_string = func_string, n_points = n_points, n_intermediate = n_intermediate)
+        plot_param_history(gd_result, savedir, datafile; func_form = func_form, func_string = func_string, n_points = n_points, n_intermediate = n_intermediate)
     end
 
 end
