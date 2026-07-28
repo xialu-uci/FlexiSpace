@@ -4,7 +4,7 @@
 using FlexiBasicLearning
 using CairoMakie
 
-function end_to_end_gd_tracking(results_all_ig, datafile)
+function end_to_end_gd_tracking(results_all_ig, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     @load datafile true_params
     for result in results_all_ig
         gd_result = result["gd_result"]
@@ -13,7 +13,7 @@ function end_to_end_gd_tracking(results_all_ig, datafile)
         result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_params)
         # plot stuff
         plot_gd_tracker(result_gd_tracker, savedir)
-        plot_param_history(gd_result, savedir, true_params, datafile)
+        plot_param_history(gd_result, savedir, datafile; func_form = func_form, func_string = func_string, n_points = n_points, n_intermediate = n_intermediate)
     end
 
 end
@@ -54,8 +54,9 @@ function plot_gd_tracker(gd_tracker, savedir)
     return fig
 end
 
-function plot_param_history(result, savedir, gt, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
+function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     @load datafile data 
+    @load datafile true_params
     x_data = data[:, 1]
     y_data = data[:, 2] # for second figure
 
@@ -70,7 +71,7 @@ function plot_param_history(result, savedir, gt, datafile; func_form = FlexiBasi
 
     intermediates = result.parameter_history[inter_idxs]
 
-    params_list = vcat([ig], intermediates, [best])
+    params_list = vcat([ig], intermediates, [best], [true_params])
     xs = range(0.0, 1.0, length = n_points)
 
     # label initial guess and best fit, others labeled by index in parameter_history
@@ -79,12 +80,12 @@ function plot_param_history(result, savedir, gt, datafile; func_form = FlexiBasi
     # rest is gray dashed
     labels = vcat(["initial guess"],
                    ["iter $(i)" for i in inter_idxs],
-                   ["best fit"])
-    cmap = Makie.cgrad(:rainbow, n_intermediate, categorical = true)
+                   ["best fit"], ["ground truth"])
+    cmap = Makie.cgrad(:blues, n_intermediate, categorical = true)
     inter_colors = [cmap[i] for i in 1:n_intermediate]
 
-    colors = vcat([:orange], inter_colors, [:green])
-    styles = vcat([:solid], fill(:dash, length(intermediates)), [:solid])
+    colors = vcat([:green], inter_colors, [:indigo], [:black])
+    styles = vcat([:solid], fill(:dash, length(intermediates)), [:solid], [:dot])
 
 
     fig1 = Figure(size =(800, 600))

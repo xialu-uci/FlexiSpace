@@ -27,7 +27,7 @@ function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, sh
         savedir = "../FlexiSpaceLocal/data"
         full_path = joinpath(savedir, save_name)
         mkpath(dirname(full_path))
-        @save full_path data true_func true_params
+        @save full_path data func_form true_params
         println("Saved $save_name to $savedir")
     end
     return data
@@ -147,7 +147,8 @@ num_points = 20
 # num_points = 20
 dofs = [3,4,5,20,50]
 shapes = [crooked_flexi, cu_flexi, cd_flexi]
-funcs = [make_flexi1_ode1_func]
+# funcs = [make_flexi1_ode1_func]
+funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
 for f in funcs, d in dofs, s in shapes
     fname = func_name(f)

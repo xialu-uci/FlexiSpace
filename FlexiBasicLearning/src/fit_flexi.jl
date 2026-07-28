@@ -67,13 +67,13 @@ end
 
 
 
-function plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = "Flexi fit comparison")
+function plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = "Fit Comparison")
     fig = Figure(size = (800, 500))
     ax = CairoMakie.Axis(fig[1, 1], xlabel = "x", ylabel = "y", title = title)
     CairoMakie.lines!(ax, x_grid, y_true,  label = "true",             linewidth = 2, color = :black, linestyle = :dash)
     CairoMakie.lines!(ax, x_grid, y_cmaes, label = "cmaes fit",        linewidth = 2, color = :red)
     CairoMakie.lines!(ax, x_grid, y_gd,    label = "grad descent fit", linewidth = 2, color = :blue)
-    CairoMakie.scatter!(ax, x, y_data, label = "noisy data", markersize = 5, color = (:gray, 0.4))
+    CairoMakie.scatter!(ax, x, y_data, label = "noisy data", markersize = 5, color = (:orange))
 
     axislegend(ax, position = :rb)
     return fig
@@ -105,7 +105,11 @@ end
 # --- combined driver: builds both plots from a fit result + raw data, and saves them ---
 function ig_plot_loss_and_fits(result, datafile)
     @load datafile data
-    @load datafile true_func
+    @load datafile func_form
+    @load datafile true_params
+
+    true_func = func_form(true_params)
+
     x = data[:, 1]
     y_data = data[:, 2]
     x_grid = collect(LinRange(0.0, 1.0, 500))
@@ -121,9 +125,13 @@ function ig_plot_loss_and_fits(result, datafile)
 
 
     y_true  = true_func.(x_grid)
+    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(true_params))
     y_cmaes = fw(x_grid, cmaes_fit_params, my_model)
+    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(cmaes_fit_params))
     # println(y_cmaes)
     y_gd = fw(x_grid, gd_fit_params, my_model)
+    flexi_gd = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(gd_fit_params))
+
     # println(y_gd)
     mkpath(savedir)
 
@@ -132,17 +140,24 @@ function ig_plot_loss_and_fits(result, datafile)
     fig1 = plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = title)
     save(joinpath(savedir, "fit_overlay.png"), fig1)
 
+
+
     fig2 = plot_loss(cmaes_loss_history, gd_loss_history)
     save(joinpath(savedir, "loss_history.png"), fig2)
+
+    title3 = "Flexifunction only comparison (dofs=$(length(my_model.params)))"
+    fig3 = plot_fits([0.0], [0.0], x_grid, flexi_true, flexi_cmaes, flexi_gd; title = title3) # don't plot datapoints
+    save(joinpath(savedir, "flexi_overlay.png"), fig3)
+
 
     # fig3 = plot_grads(gd_grads)
     # save(joinpath(savedir, "gd_grads.png"), fig3)
 
 
 
-    println("Saved fit_overlay.png and loss_history.png to $savedir")
+    println("Saved fit_overlay.png, loss_history.png, flexi_overlay.png to $savedir")
 
-    return fig1, fig2
+    return fig1, fig2, fig3
 end
 
 function plot_loss_and_fits(results, datafile) 
