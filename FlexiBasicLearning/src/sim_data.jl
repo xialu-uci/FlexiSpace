@@ -4,15 +4,16 @@ using JLD2
 using OrdinaryDiffEq  
 
 
-function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = crooked_flexi, save_name = nothing)
+function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = crooked_flexi, ode = false, save_name = nothing)
 
     # helper true flexi params
     true_params = shape(dofs)
     # true_func = func_form(dofs; shape = shape)
 
-    true_func = func_form(true_params)
+    x_max, true_func = func_form(true_params; for_sim = true)
     # num_points must be in
-    x = LinRange(0.0,1.0, num_points)
+   x = LinRange(0.0,x_max, 20)
+   
     y = true_func.(x)
     # add noise to y
     # skip noise comp if std = 0.0
@@ -71,41 +72,52 @@ end
 # end
 
 # try this instead? useful for other stuff
-function make_flexi1_func(params)
-    return x -> FlexiFunctions.evaluate_decompress(x, params)
+function make_flexi1_func(params; for_sim = false)
+    if for_sim
+        return 1.0, x -> FlexiFunctions.evaluate_decompress(x, params)
+    else
+        return x -> FlexiFunctions.evaluate_decompress(x, params)
+    end
 end
 
 
-function make_flexi1_alg1_func(params)
-    return x -> x .* FlexiFunctions.evaluate_decompress(x, params)
+function make_flexi1_alg1_func(params; for_sim = false)
+    if for_sim
+        return 1.0, x -> x .* FlexiFunctions.evaluate_decompress(x, params)
+    else
+        return x -> x .* FlexiFunctions.evaluate_decompress(x, params)
+    end
 end
 
 
-# function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8,
-#                                 x_max = 1e4)
-#     f = y -> FlexiFunctions.evaluate_decompress(y, params)  # dy/dx = f(y)
-#     dydx(y, p, x) = f(y)
+function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8,
+                                x_max = 1e4, for_sim = false)
+    f = y -> FlexiFunctions.evaluate_decompress(y, params)  # dy/dx = f(y)
+    dydx(y, p, x) = f(y)
 
-#     # stop integration if y exits [0, 1]
-#     condition(y, x, integrator) = (y - 1.0) * y  # zero when y == 0 or y == 1
-#     affect!(integrator) = terminate!(integrator)
-#     cb = ContinuousCallback(condition, affect!)
+    # stop integration if y exits [0, 1]
+    condition(y, x, integrator) = (y - 1.0) * y  # zero when y == 0 or y == 1
+    affect!(integrator) = terminate!(integrator)
+    cb = ContinuousCallback(condition, affect!)
 
-#     prob = ODEProblem(dydx, 0.0, (0.0, x_max))
-#     sol = solve(prob, alg; reltol = reltol, abstol = abstol, callback = cb)
+    prob = ODEProblem(dydx, 0.1, (0.0, x_max))
+    sol = solve(prob, alg; reltol = reltol, abstol = abstol, callback = cb)
+    if for_sim
+        return sol.t[end], x -> sol(x)
+    else
+        return x -> sol(x)
+    end
+end
 
-#     return sol
+# function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8)
+#     f = y ->  FlexiFunctions.evaluate_decompress(y, params) # dy/dx = f(y)
+#     dydx(y, p, x) = f(y)  # out-of-place form; y and x are scalars here
+
+#     prob = ODEProblem(dydx, 0.1, (0.0, 1.0))  # y(0) = 0, integrate x in [0,1]
+#     sol = solve(prob, alg; reltol = reltol, abstol = abstol)
+
+#     return x -> sol(x)  # callable, returns interpolated y(x)
 # end
-
-function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8)
-    f = y ->  FlexiFunctions.evaluate_decompress(y, params) # dy/dx = f(y)
-    dydx(y, p, x) = f(y)  # out-of-place form; y and x are scalars here
-
-    prob = ODEProblem(dydx, 0.1, (0.0, 1.0))  # y(0) = 0, integrate x in [0,1]
-    sol = solve(prob, alg; reltol = reltol, abstol = abstol)
-
-    return x -> sol(x)  # callable, returns interpolated y(x)
-end
 
 # small_data = sim_data(10, 5)
 

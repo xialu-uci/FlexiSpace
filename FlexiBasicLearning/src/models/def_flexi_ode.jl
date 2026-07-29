@@ -37,7 +37,7 @@ end
 function fw(x::AbstractVector, params, model::ModelFlexiODE; gradient_mode = false)
     # get ODE solution
     rhs = make_rhs(model; gradient_mode = gradient_mode)
-    tspan = (0.0,1.0)
+    tspan = (0.0,maximum(x))
     prob = ODEProblem(rhs, model.u0,tspan, params)
     sol = solve(prob, Tsit5();
         saveat = x,

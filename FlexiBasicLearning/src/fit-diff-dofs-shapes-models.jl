@@ -16,10 +16,10 @@ num_points = 20
 dofs = [3, 4, 5, 20, 50]
 # dofs = [4,5,20,50]
 shapes = [FlexiBasicLearning.crooked_flexi, FlexiBasicLearning.cu_flexi, FlexiBasicLearning.cd_flexi]
-funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func]
-# funcs = [FlexiBasicLearning.make_flexi1_ode1_func] # test for 0723, 0727
-# func_strings = ["y' = f(y)"]
-func_strings = ["y = f(x)", "y = x ⋅ f(x)"]
+# funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func]
+funcs = [FlexiBasicLearning.make_flexi1_ode1_func] # test for 0728: with full domain, does it get faster?
+func_strings = ["y' = f(y)"]
+# func_strings = ["y = f(x)", "y = x ⋅ f(x)"]
 
 # more dirs
 funcs_rpts = []

@@ -42,7 +42,13 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     end
 
     optf = Optimization.OptimizationFunction(flexi_loss, Optimization.AutoZygote())
-    prob = Optimization.OptimizationProblem(optf, ig)
+
+    flexi_bound = 1.0 # for cu, true max is always dof/srt(sum(1 to dof)(x^2)), but initial guess is 1/sqrt(dof)
+
+    lb = 0.0*fill(flexi_bound, length(ig));#-1.0*fill(flexi_bound, length(ig))
+    ub = +1.0*fill(flexi_bound, length(ig)) # how kosher is it for me to do this teehee
+
+    prob = Optimization.OptimizationProblem(optf, ig; lb=lb, ub = ub) # TODO: add ub, lb?
     sol = solve(prob, OptimizationOptimJL.GradientDescent(); callback=callback, maxiters=maxiters)
     # could try other gradient descent optimizers (BFGS)
 
