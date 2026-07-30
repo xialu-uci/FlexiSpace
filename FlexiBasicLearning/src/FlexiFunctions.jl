@@ -24,8 +24,20 @@ using Zygote
 # end
 
 @inline function evaluate_decompress(x::Real, params::AbstractVector; gradient_mode = false)
-     if gradient_mode
-        N_intervals = length(params)
+     # Early exit for edge cases
+    N_intervals = length(params)
+    if x <= 0.0
+        return 0.0
+    elseif x >= 1.0
+        # Return the complete sum of squares - could be precomputed if called repeatedly with x=1
+        theta_N = 0.0
+        @fastmath @inbounds for k in 1:N_intervals
+            theta_N += params[k] * params[k]
+        end
+        return theta_N
+    end
+    if gradient_mode
+        # N_intervals = length(params)
         thetas = [0; cumsum(params .^ 2)]
         i = Zygote.@ignore min(floor(Int, N_intervals * x) + 1, N_intervals)
         x_i = Zygote.@ignore (i - 1) / N_intervals
@@ -33,19 +45,19 @@ using Zygote
         return thetas[i] + (x - x_i) * (thetas[i+1] - thetas[i]) / (x_j - x_i)
     else
         # params::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true} < old type constraint for params
-        N_intervals = length(params)
+        # N_intervals = length(params)
 
-        # Early exit for edge cases
-        if x <= 0.0
-            return 0.0
-        elseif x >= 1.0
-            # Return the complete sum of squares - could be precomputed if called repeatedly with x=1
-            theta_N = 0.0
-            @fastmath @inbounds for k in 1:N_intervals
-                theta_N += params[k] * params[k]
-            end
-            return theta_N
-        end
+        # # Early exit for edge cases
+        # if x <= 0.0
+        #     return 0.0
+        # elseif x >= 1.0
+        #     # Return the complete sum of squares - could be precomputed if called repeatedly with x=1
+        #     theta_N = 0.0
+        #     @fastmath @inbounds for k in 1:N_intervals
+        #         theta_N += params[k] * params[k]
+        #     end
+        #     return theta_N
+        # end
 
         # Find the interval - avoid division when possible
         scaled_x = x * N_intervals

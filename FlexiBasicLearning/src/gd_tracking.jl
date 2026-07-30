@@ -72,7 +72,7 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
     intermediates = result.parameter_history[inter_idxs]
 
     params_list = vcat([ig], intermediates, [best], [true_params])
-    xs = range(0.0, 1.0, length = n_points)
+    xs = range(0.0, maximum(x_data), length = n_points)
 
     # label initial guess and best fit, others labeled by index in parameter_history
     # ig is orange solid
@@ -90,8 +90,8 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
 
     fig1 = Figure(size =(800, 600))
 
-    ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = "x", ylabel = "f(x)",
-              title = "Flexifunction History")
+    ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = "x (flexifunction argument)", ylabel = "f(x)",
+              title = "Flexifunction Only History for $func_string")
 
 
     # save 
@@ -107,8 +107,8 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
     
     fig2 = Figure(size =(800, 600))
 
-    ax2 = CairoMakie.Axis(fig2[1, 1], xlabel = "x", ylabel = func_string,
-            title = "$func_string with Flexifunction f(x) History")
+    ax2 = CairoMakie.Axis(fig2[1, 1], xlabel = "t", ylabel = "y",
+            title = "$func_string with Flexifunction History")
 
 
     # save 

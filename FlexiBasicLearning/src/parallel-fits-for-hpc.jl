@@ -1,6 +1,6 @@
 # using JLD2
-using FlexiBasicLearning
-using CairoMakie
+# using FlexiBasicLearning
+# using CairoMakie
 # using LinearAlgebra
 
 # setting up dirs
@@ -58,10 +58,3 @@ for (datafile, savedir, make_model, f, f_str) in zip(datafiles, savedirs, make_m
     FlexiBasicLearning.plot_loss_and_fits(result, datafile) # TODO: plotting doesn't used savedir anymore
     FlexiBasicLearning.end_to_end_gd_tracking(result, datafile; func_form = f, func_string = f_str)
 end
-
-# savedir = savedirs[div(length(savedirs), 2)]
-# datafile = datafiles[div(length(datafiles), 2)]
-# make_model = make_models[div(length(make_models), 2)]
-# result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model)
-# FlexiBasicLearning.plot_loss_and_fits(result, datafile, savedir)
-
