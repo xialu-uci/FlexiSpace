@@ -4,7 +4,7 @@ using CairoMakie
 # using LinearAlgebra
 
 # setting up dirs
-expdir = "../FlexiSpaceLocal/exp/07282026/"
+expdir = "../FlexiSpaceLocal/exp/07292026/"
 datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 savedirs = []
 datafiles = []
@@ -14,12 +14,14 @@ make_models = []
 
 num_points = 20
 dofs = [3, 4, 5, 20, 50]
+# dofs = [3]
 # dofs = [4,5,20,50]
 shapes = [FlexiBasicLearning.crooked_flexi, FlexiBasicLearning.cu_flexi, FlexiBasicLearning.cd_flexi]
-# funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func]
-funcs = [FlexiBasicLearning.make_flexi1_ode1_func] # test for 0728: with full domain, does it get faster?
-func_strings = ["y' = f(y)"]
-# func_strings = ["y = f(x)", "y = x ⋅ f(x)"]
+# shapes = [FlexiBasicLearning.cu_flexi] #TODO: debug
+funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func]
+# funcs = [FlexiBasicLearning.make_flexi1_ode1_func] # test for 0728: with full domain, does it get faster?
+# func_strings = ["y' = f(y)"]
+func_strings = ["y = f(t)", "y = t ⋅ f(t)"]
 
 # more dirs
 funcs_rpts = []
