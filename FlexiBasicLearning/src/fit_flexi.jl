@@ -47,9 +47,9 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_p
     # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
     # save cmaes results
-    @save joinpath(savedir, "cmaes_result.jld2") cmaes_result
+    @save joinpath(savedir, "cmaes_result.jld2") cmaes_result # maybe no save?
     # save gd results
-    @save joinpath(savedir, "gd_result.jld2") gd_result
+    @save joinpath(savedir, "gd_result.jld2") gd_result # maybe no save?
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
     result = Dict(
@@ -182,7 +182,7 @@ function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing], save_p
     # if length(results) == 1
     #     return results[1]  # if only one result, return it directly
     # else
-    # save(joinpath(savedir, "results_all_ig.png"), results)
+    @save joinpath(savedir, "results_all_ig.png") results
     return results  # always return the list of results for type consistency
     # end
 end

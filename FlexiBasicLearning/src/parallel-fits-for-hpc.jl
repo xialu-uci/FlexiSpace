@@ -48,13 +48,25 @@ end
 
 println(funcs_rpts)
 println(func_strings_rpts)
-results = []
+
+#TODO: above here I think can be deleted?
+
+# need to have some folder of "args" and from args draw config with:
+    # datafile, savedir, make_model, f <-- make a function f --> f_str
+    # ^name of datafile should contain all the info for savedir, make_model, f? Find way to extract this info? Then args can be datafile names only?
+    # parse datafile name
+    # folder/datafile <- folder contains func_form, dof, obs info, datafile contains shape info
+    # put this in shared_model_functions? or sim_data
+
+
+    # 
+# results = []
 for (datafile, savedir, make_model, f, f_str) in zip(datafiles, savedirs, make_models, funcs_rpts, func_strings_rpts)
     println("Fitting for datafile: $datafile")
     result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model, save_parameters = true)
-    push!(results, result)
+    # push!(results, result)
     println("Finished fitting for datafile: $datafile")
     # plot using result Dict
-    FlexiBasicLearning.plot_loss_and_fits(result, datafile) # TODO: plotting doesn't used savedir anymore
-    FlexiBasicLearning.end_to_end_gd_tracking(result, datafile; func_form = f, func_string = f_str)
+    # FlexiBasicLearning.plot_loss_and_fits(result, datafile) # TODO: plotting doesn't used savedir anymore
+    # FlexiBasicLearning.end_to_end_gd_tracking(result, datafile; func_form = f, func_string = f_str) # big result must be accessible from savedir
 end
