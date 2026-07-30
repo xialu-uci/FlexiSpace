@@ -58,7 +58,8 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_p
         "cmaes_result" => cmaes_result,
         "gd_result" => gd_result,
         "cmaes_time" => cmaes_time,
-        "gd_time" => gd_time
+        "gd_time" => gd_time,
+        "ig" => ig
     )
     return result
 end
@@ -69,7 +70,7 @@ end
 
 function plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = "Fit Comparison")
     fig = Figure(size = (800, 500))
-    ax = CairoMakie.Axis(fig[1, 1], xlabel = "x", ylabel = "y", title = title)
+    ax = CairoMakie.Axis(fig[1, 1], xlabel = "t", ylabel = "y", title = title)
     CairoMakie.lines!(ax, x_grid, y_true,  label = "true",             linewidth = 2, color = :black, linestyle = :dash)
     CairoMakie.lines!(ax, x_grid, y_cmaes, label = "cmaes fit",        linewidth = 2, color = :red)
     CairoMakie.lines!(ax, x_grid, y_gd,    label = "grad descent fit", linewidth = 2, color = :blue)
@@ -112,7 +113,9 @@ function ig_plot_loss_and_fits(result, datafile)
 
     x = data[:, 1]
     y_data = data[:, 2]
-    x_grid = collect(LinRange(0.0, 1.0, 500))
+    x_grid = collect(LinRange(0.0, maximum(x), 500))
+    x_grid_flexi = collect(LinRange(0.0, 1.0, 500))
+
 
     savedir = result["save_dir"]
     my_model = result["my_model"]
@@ -125,14 +128,14 @@ function ig_plot_loss_and_fits(result, datafile)
 
 
     y_true  = true_func.(x_grid)
-    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(true_params))
+    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params))
     y_cmaes = fw(x_grid, cmaes_fit_params, my_model)
-    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(cmaes_fit_params))
+    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params))
     # println(y_cmaes)
     y_gd = fw(x_grid, gd_fit_params, my_model)
-    flexi_gd = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid, Ref(gd_fit_params))
+    flexi_gd = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params))
 
-    # println(y_gd)
+    # println(y_gd)x_grid = 
     mkpath(savedir)
 
     
@@ -146,7 +149,7 @@ function ig_plot_loss_and_fits(result, datafile)
     save(joinpath(savedir, "loss_history.png"), fig2)
 
     title3 = "Flexifunction only comparison (dofs=$(length(my_model.params)))"
-    fig3 = plot_fits([0.0], [0.0], x_grid, flexi_true, flexi_cmaes, flexi_gd; title = title3) # don't plot datapoints
+    fig3 = plot_fits([0.0], [0.0], x_grid_flexi, flexi_true, flexi_cmaes, flexi_gd; title = title3) # don't plot datapoints
     save(joinpath(savedir, "flexi_overlay.png"), fig3)
 
 
@@ -179,7 +182,8 @@ function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing], save_p
     # if length(results) == 1
     #     return results[1]  # if only one result, return it directly
     # else
-    return results  # otherwise, return the list of results
+    # save(joinpath(savedir, "results_all_ig.png"), results)
+    return results  # always return the list of results for type consistency
     # end
 end
    
