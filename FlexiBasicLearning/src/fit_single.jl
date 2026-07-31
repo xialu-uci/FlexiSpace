@@ -50,13 +50,13 @@ const model_makers = Dict(
 
 # length(ARGS) < 3 && usage_and_exit()
 
-# func_key  = ARGS[1]
-# d         = parse(Int, ARGS[2])
-# shape_key = ARGS[3]
+func_key  = ARGS[1]
+d         = parse(Int, ARGS[2])
+shape_key = ARGS[3]
 
-func_key  = "flexi1"
-d         = 3
-shape_key = "crooked"
+# func_key  = "flexi1"
+# d         = 3
+# shape_key = "crooked"
 
 
 haskey(func_info, func_key) || error("Unknown func_key '$func_key'. Options: $(collect(keys(func_info)))")

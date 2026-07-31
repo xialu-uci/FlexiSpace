@@ -182,7 +182,7 @@ function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing], save_p
     # if length(results) == 1
     #     return results[1]  # if only one result, return it directly
     # else
-    @save joinpath(savedir, "results_all_ig.png") results
+    @save joinpath(savedir, "results_all_ig.jld2") results
     return results  # always return the list of results for type consistency
     # end
 end
