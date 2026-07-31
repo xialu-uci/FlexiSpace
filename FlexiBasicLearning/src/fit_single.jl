@@ -7,7 +7,7 @@ using LinearAlgebra
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
 const num_points = 20
-const expdir  = "../FlexiSpaceLocal/exp/07292026/"
+const expdir  = "../FlexiSpaceLocal/exp/07312026/"
 const datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
@@ -34,25 +34,30 @@ const model_makers = Dict(
 # ------------------------------------------------------------------
 # CLI args: func_key  dof  shape_key
 # ------------------------------------------------------------------
-function usage_and_exit()
-    println(stderr, """
-    Usage: julia fit_single.jl <func_key> <dof> <shape_key>
+# function usage_and_exit()
+#     println(stderr, """
+#     Usage: julia fit_single.jl <func_key> <dof> <shape_key>
 
-      func_key   one of: $(join(sort(collect(keys(func_info))), ", "))
-      dof        integer, e.g. 3, 4, 5, 20, 50
-      shape_key  one of: $(join(sort(collect(keys(shapes))), ", "))
+#       func_key   one of: $(join(sort(collect(keys(func_info))), ", "))
+#       dof        integer, e.g. 3, 4, 5, 20, 50
+#       shape_key  one of: $(join(sort(collect(keys(shapes))), ", "))
 
-    Example:
-      julia fit_single.jl flexi1 20 crooked
-    """)
-    exit(1)
-end
+#     Example:
+#       julia fit_single.jl flexi1 20 crooked
+#     """)
+#     exit(1)
+# end
 
-length(ARGS) < 3 && usage_and_exit()
+# length(ARGS) < 3 && usage_and_exit()
 
-func_key  = ARGS[1]
-d         = parse(Int, ARGS[2])
-shape_key = ARGS[3]
+# func_key  = ARGS[1]
+# d         = parse(Int, ARGS[2])
+# shape_key = ARGS[3]
+
+func_key  = "flexi1"
+d         = 3
+shape_key = "crooked"
+
 
 haskey(func_info, func_key) || error("Unknown func_key '$func_key'. Options: $(collect(keys(func_info)))")
 haskey(shapes, shape_key)   || error("Unknown shape_key '$shape_key'. Options: $(collect(keys(shapes)))")
