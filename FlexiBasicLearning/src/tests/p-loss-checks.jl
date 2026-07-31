@@ -76,7 +76,8 @@ function look_for_nonconvexity(datafile, savedir, flexi_dofs, shape)
 
 end
 
-dof_list = [2,3,4,5]
+# dof_list = [2,3,4,5]
+dof_list = [20, 50]
 shapes = [FlexiBasicLearning.crooked_flexi, FlexiBasicLearning.cu_flexi, FlexiBasicLearning.cd_flexi]
 
 for dof in dof_list

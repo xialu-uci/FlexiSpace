@@ -10,7 +10,8 @@ using Optim, Optimization, OptimizationEvolutionary
 using OptimizationOptimJL
 using Optimisers, Zygote
 using ChainRulesCore # can prob get rid of ChainRulesCore
-
+using SciMLSensitivity
+using LineSearches
 include("FlexiFunctions.jl")
 
 using .FlexiFunctions
@@ -29,7 +30,7 @@ abstract type AbstractFlexiBasicModel <: AbstractModel end
     data::Matrix{Float64} # modified to match data structure
     model::M
     mask::Vector{Bool} # modified to match data structure
-    loss_strategy::String = "vanilla"
+    loss_strategy::String = "normalized"
 end
 
 
@@ -40,6 +41,7 @@ export CallbackConfig, LearningConstants
 # include models
 include("models/def_flexi_basic.jl")
 include("models/def_flexi_alg.jl")
+include("models/def_flexi_ode.jl")
 
 # include helpers
 include("get_loss.jl")
@@ -54,6 +56,7 @@ include("learning_protocols/grad_desc.jl")
 include("fit_flexi.jl")
 include("sim_data.jl") # use naming functions in other files
 include("loss_slicing.jl") # for looking at loss vs. params and other stuff.
+include("gd_tracking.jl") # for looking at where gd goes
 
 
 
