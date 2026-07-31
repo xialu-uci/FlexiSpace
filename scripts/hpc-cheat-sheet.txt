@@ -1,0 +1,2 @@
+cd /pub/stilese/2026
+local: rsync -avz [folder that is being copied][location]
