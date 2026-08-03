@@ -12,13 +12,14 @@ const DEFAULT_LEARNING_CONSTANTS = LearningConstants(14.0, 1/1000, 1/6, 20000)
 struct CallbackConfig
     print_frequency::Int
     save_parameters::Bool
+    time_grads::Bool
     verbose::Bool
     constants::LearningConstants
 end
 
-CallbackConfig(; print_frequency=100, save_parameters=false, verbose=true, 
+CallbackConfig(; print_frequency=100, save_parameters=false, time_grads=false, verbose=true, 
                constants=DEFAULT_LEARNING_CONSTANTS) = 
-    CallbackConfig(print_frequency, save_parameters, verbose, constants)
+    CallbackConfig(print_frequency, save_parameters, time_grads, verbose, constants)
 
     # Standardized callback functions
 function create_standard_callback(protocol_name::String, config::CallbackConfig)
