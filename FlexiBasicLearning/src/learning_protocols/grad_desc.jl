@@ -5,7 +5,7 @@ using SciMLSensitivity
 using LineSearches
 using Zygote
 
-function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_frequency = 1000, save_parameters = false)
+function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_frequency = 1000, save_parameters = false, time_grads = false)
 
     function flexi_loss(params, p)
        #println("USING TRY/CATCH VERSION")
@@ -25,7 +25,7 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     loss_history = Float64[]
     # grad_norm_history = Float64[]
     
-    config = CallbackConfig(;print_frequency = print_frequency, save_parameters = save_parameters)
+    config = CallbackConfig(;print_frequency = print_frequency, save_parameters = save_parameters, time_grads = time_grads)
 
     parameter_history = config.save_parameters ? [] : nothing
     gradient_history = config.save_parameters ? [] : nothing
@@ -37,7 +37,7 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
         push!(loss_history, lossval)
         current_iter = length(loss_history)
         # println("callback iter $current_iter: loss=$lossval, norm(u)=$(sqrt(sum(p.u.^2))), norm(grad)=$(sqrt(sum(p.grad.^2)))")
-        
+        # in callback: compute gradient again? time it and print it here.
 
         if config.save_parameters
             # if current_iter % config.print_frequency == 0
@@ -47,7 +47,7 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
             # end   
         end
 
-        if config.verbose && current_iter % config.print_frequency == 0
+        if config.verbose && current_iter % config.print_frequency == 0 
             qdrms = sqrt(lossval / config.constants.qdrms_divisor)
             println("In grad_descent, iteration $current_iter: loss=$lossval, qdrms=$qdrms at $(now())")
             flush(stdout)
@@ -62,7 +62,7 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     # lb = 0.0*fill(flexi_bound, length(ig));#-1.0*fill(flexi_bound, length(ig))
     # ub = +1.0*fill(flexi_bound, length(ig)) # how kosher is it for me to do this teehee
 
-    prob = Optimization.OptimizationProblem(optf, ig) # TODO: add ub, lb?
+    prob = Optimization.OptimizationProblem(optf, ig) 
     # sol = solve(prob, OptimizationOptimJL.GradientDescent(linesearch = LineSearches.BackTracking(),
     #                 alphaguess = LineSearches.InitialStatic(alpha = 1e-2)); callback=callback, maxiters=maxiters)
     sol = solve(prob, OptimizationOptimJL.GradientDescent(); callback=callback, maxiters=maxiters)
