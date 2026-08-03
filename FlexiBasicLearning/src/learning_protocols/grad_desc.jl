@@ -47,6 +47,14 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
             # end   
         end
 
+        if config.time_grads
+            t0 = time_ns()
+            Zygote.gradient(θ -> flexi_loss(θ, nothing), p.u)
+            elapsed = (time_ns() - t0) / 1e9
+            push!(grad_time_history, elapsed)
+        end
+
+
         if config.verbose && current_iter % config.print_frequency == 0 
             qdrms = sqrt(lossval / config.constants.qdrms_divisor)
             println("In grad_descent, iteration $current_iter: loss=$lossval, qdrms=$qdrms at $(now())")
@@ -65,6 +73,9 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     prob = Optimization.OptimizationProblem(optf, ig) 
     # sol = solve(prob, OptimizationOptimJL.GradientDescent(linesearch = LineSearches.BackTracking(),
     #                 alphaguess = LineSearches.InitialStatic(alpha = 1e-2)); callback=callback, maxiters=maxiters)
+    if config.time_grads
+        Zygote.gradient(θ -> flexi_loss(θ, nothing), ig)  # this compiles it
+    end
     sol = solve(prob, OptimizationOptimJL.GradientDescent(); callback=callback, maxiters=maxiters)
     # # could try other gradient descent optimizers (BFGS)
 
@@ -87,10 +98,12 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
 
     # TODO: modify to be a result with fields
     if config.save_parameters
-        # return sol.u, loss_history, grad_norm_history, grads, params, config.print_frequency
-        result =  (fit_params = sol.u, loss_history = loss_history, gradient_history = gradient_history, parameter_history = parameter_history) # save_freq = config.print_frequency
+        result = (fit_params = sol.u, loss_history = loss_history, gradient_history = gradient_history,
+                  parameter_history = parameter_history,
+                  grad_time_history = config.time_grads ? grad_time_history : nothing)
     else
-        result = (fit_params = sol.u, loss_history = loss_history)
+        result = (fit_params = sol.u, loss_history = loss_history,
+                  grad_time_history = config.time_grads ? grad_time_history : nothing)
     end
     return result
     
