@@ -131,13 +131,13 @@ function plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = "Fit Compar
 end
 
 # --- helper: loss histories, side by side ---
-function plot_loss(cmaes_loss_history, gd_loss_history)
+function plot_loss(cmaes_loss_history, gd_loss_history, cmaes_time, gd_time)
     fig = Figure(size = (900, 400))
     ax_cmaes = CairoMakie.Axis(fig[1, 1], xlabel = "iteration", ylabel = "loss",
-                    title = "CMA-ES loss", yscale = log10)
+                    title = "CMA-ES loss ($cmaes_time s)", yscale = log10)
     lines!(ax_cmaes, cmaes_loss_history, color = :red, linewidth = 2)
     ax_gd = CairoMakie.Axis(fig[1, 2], xlabel = "iteration", ylabel = "loss",
-                title = "Gradient descent loss", yscale = log10)
+                title = "Gradient descent loss ($gd_time s)", yscale = log10)
     lines!(ax_gd, gd_loss_history, color = :blue, linewidth = 2)
     linkyaxes!(ax_cmaes, ax_gd)
     return fig
@@ -161,9 +161,11 @@ function ig_plot_loss_and_fits(result)
     cmaes_result   = result["cmaes_result"]
     cmaes_loss_history = cmaes_result.loss_history
     cmaes_fit_params = cmaes_result.fit_params
+    cmaes_time = result["cmaes_time"]
     gd_result = result["gd_result"]
     gd_loss_history = gd_result.loss_history
     gd_fit_params = gd_result.fit_params
+    gd_time = result["gd_time"]
 
     @load datafile data
     @load datafile func_form
@@ -198,7 +200,7 @@ function ig_plot_loss_and_fits(result)
 
 
 
-    fig2 = plot_loss(cmaes_loss_history, gd_loss_history)
+    fig2 = plot_loss(cmaes_loss_history, gd_loss_history, cmaes_time, gd_time)
     save(joinpath(savedir, "loss_history.png"), fig2)
 
     title3 = "Flexifunction only comparison (dofs=$(length(my_model.params)))"
