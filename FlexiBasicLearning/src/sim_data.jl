@@ -154,20 +154,22 @@ end
 # comment out so it doesn't resave data every instantiation.
 
 # num_points = 20
-# # dofs = [5, 20, 50]
-# # shapes = [crooked_flexi, cu_flexi, cd_flexi]
-# # funcs = [make_flexi1_func, make_flexi1_alg1_func]
-# # num_points = 20
-# dofs = [3,4,5,20,50]
-# shapes = [crooked_flexi, cu_flexi, cd_flexi]
-# # funcs = [make_flexi1_ode1_func]
-# funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
-# for f in funcs, d in dofs, s in shapes
-#     fname = func_name(f)
-#     sname = shape_name(s)
-#     save_name = joinpath("w_true_params/no-noise/$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
-#     sim_data(num_points, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
-# end
+# dofs = [5, 20, 50]
+# shapes = [crooked_flexi, cu_flexi, cd_flexi]
+# funcs = [make_flexi1_func, make_flexi1_alg1_func]
+# num_points = 20
+num_points = [3, 5, 10, 50, 100]
+dofs = [3,4,5,20,50]
+shapes = [crooked_flexi, cu_flexi, cd_flexi]
+# funcs = [make_flexi1_ode1_func]
+funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
+
+for n in num_points, f in funcs, d in dofs, s in shapes
+    fname = func_name(f)
+    sname = shape_name(s)
+    save_name = joinpath("w_true_params/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+    sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+end
 
 # sim_data(20, 2, func_form = make_flexi1_func, shape = cu_flexi, )

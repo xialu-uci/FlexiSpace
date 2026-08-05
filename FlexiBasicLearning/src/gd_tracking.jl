@@ -73,6 +73,7 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
 
     params_list = vcat([ig], intermediates, [best], [true_params])
     xs = range(0.0, maximum(x_data), length = n_points)
+    xs_flexi = range(0.0, 1.0, length = n_points)
 
     # label initial guess and best fit, others labeled by index in parameter_history
     # ig is orange solid
@@ -96,8 +97,8 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
 
     # save 
     for (params, label, color, style) in zip(params_list, labels, colors, styles)
-        ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs]
-        lines!(ax1, xs, ys; label = label, color = color, linestyle = style)
+        ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]
+        lines!(ax1, xs_flexi, ys; label = label, color = color, linestyle = style)
     end
 
     axislegend(ax1, position = :rt)

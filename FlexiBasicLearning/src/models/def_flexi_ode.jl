@@ -42,10 +42,10 @@ function fw(x::AbstractVector, params, model::ModelFlexiODE; gradient_mode = fal
     prob = ODEProblem(rhs, model.u0,tspan, params)
     # sol = solve(prob, Tsit5();
     #     saveat = x,
-    #     sensealg = InterpolatingAdjoint(autojacvec = ZygoteVJP()))
+    #     sensealg = InterpolatingAdjoint(autojacvec = ZygoteVJP())) 
     sol = solve(prob, Tsit5();
-        saveat = x,
-        sensealg = ReverseDiffAdjoint())
+        saveat = x, 
+        sensealg = ReverseDiffAdjoint()) # could reduce tolerance
     # println("g_fd:$()")
     y = vec(Array(sol))   # states x length(x), then transpose -> length(x) x states
     # println(size())
