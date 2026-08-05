@@ -8,17 +8,17 @@ using Random
 datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
 #
 
-function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_parameters)
+function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, maxiters = 10000, save_parameters = false, time_grads = false)
     @load datafile data
-    num_points = size(data)[1]
-    full = Vector{Bool}(trues(num_points))
-    my_model = make_model()
-    my_prob = LearningProblem(
-        data = data,
-        model = my_model,
-        mask = full
-    )
-
+    # num_points = size(data)[1]
+    # full = Vector{Bool}(trues(num_points))
+    # my_model = make_model()
+    # my_prob = LearningProblem(
+    #     data = data,
+    #     model = my_model,
+    #     mask = full
+    # )
+    my_prob, my_model = set_up_prob(data, make_model)
     if isnothing(ig)
         ig = deepcopy(my_model.params)
     end
@@ -35,14 +35,16 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_p
     #     end
     # end
     
-    t0 = time()
-    cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
-    cmaes_time = time() - t0
-    println("cmaes time:$cmaes_time ") 
-    t1 = time() 
-    gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; save_parameters = save_parameters)
-    gd_time = time() - t1
-    println("gd time:$gd_time ")
+    # t0 = time()
+    # cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
+    # cmaes_time = time() - t0
+    # println("cmaes time:$cmaes_time ") 
+    # t1 = time() 
+    # gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
+    # gd_time = time() - t1
+    # println("gd time:$gd_time ")
+    cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
+    gd_time, gd_result = fit_gd(my_prob, ig; maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
 
     # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
@@ -53,6 +55,7 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_p
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
     result = Dict(
+        "datafile" => datafile,
         "save_dir" => savedir,
         "my_model" => my_model,
         "cmaes_result" => cmaes_result,
@@ -64,7 +67,38 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, save_p
     return result
 end
 
+function set_up_prob(data, make_model)
+    # @load datafile data
+    num_points = size(data)[1]
+    full = Vector{Bool}(trues(num_points))
+    my_model = make_model()
+    my_prob = LearningProblem(
+        data = data,
+        model = my_model,
+        mask = full
+    )
+    return my_prob, my_model
+end
 
+function fit_cmaes(my_prob, ig)
+
+    t0 = time()
+    cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
+    cmaes_time = time() - t0
+    println("cmaes time:$cmaes_time ") 
+
+   
+    return cmaes_time, cmaes_result
+end
+
+function fit_gd(my_prob, ig; maxiters = 10000, save_parameters = false, time_grads = false)
+    t1 = time() 
+    gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
+    gd_time = time() - t1
+    println("gd time:$gd_time ")
+
+    return gd_time, gd_result
+end
 
 
 
@@ -171,12 +205,12 @@ function plot_loss_and_fits(results, datafile)
 end
 
 # new function: overload fit_cmaes_and_gd to take igs as a list of initial guesses, and return a list of results for each ig
-function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing], save_parameters = false)
+function fit_cmaes_and_gd(datafile, savedir, make_model; igs = [nothing], maxiters = 10000, save_parameters = false, time_grads = false)
     results = []
     for (idx, ig) in enumerate(igs)
         println("Fitting with initial guess $idx")
         subdir = joinpath(savedir, "fit_ig$(idx)")
-        result = ig_fit_cmaes_and_gd(datafile, subdir, make_model; ig = ig, save_parameters)
+        result = ig_fit_cmaes_and_gd(datafile, subdir, make_model; ig = ig, maxiters = maxiters, save_parameters = save_parameters, time_grads = time_grads)
         push!(results, result)
     end
     # if length(results) == 1
