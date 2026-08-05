@@ -5,8 +5,13 @@ using LinearAlgebra
 using Random
 #load crooked sim data
 
-datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
-#
+# datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
+
+#080502026 edits:
+
+    #(1) saving datafile to results dict, plotting functions now load datafile from results dict, instead of passing it in as an argument
+    #(2) helper functions to set_up_prob(), fit_cmaes(), fit_gd() to make it easier to call separately.
+    #(3) if time_grads = true, skip cmaes and only run gd, since cmaes is not needed for timing grads
 
 function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, maxiters = 10000, save_parameters = false, time_grads = false)
     @load datafile data
@@ -43,7 +48,12 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, maxite
     # gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
     # gd_time = time() - t1
     # println("gd time:$gd_time ")
-    cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
+    if !time_grads
+        # skip cmaes if timing grads
+        cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
+
+    end
+    # cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
     gd_time, gd_result = fit_gd(my_prob, ig; maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
 
     # save to savedir
@@ -54,16 +64,22 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, maxite
     @save joinpath(savedir, "gd_result.jld2") gd_result # maybe no save?
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
+
+    # result excludes all cmaes if time_grads is true, since cmaes is skipped in that case
     result = Dict(
-        "datafile" => datafile,
-        "save_dir" => savedir,
-        "my_model" => my_model,
-        "cmaes_result" => cmaes_result,
-        "gd_result" => gd_result,
-        "cmaes_time" => cmaes_time,
-        "gd_time" => gd_time,
-        "ig" => ig
+    "datafile" => datafile,
+    "save_dir" => savedir,
+    "my_model" => my_model,
+    "gd_result" => gd_result,
+    "gd_time" => gd_time,
+    "ig" => ig
     )
+
+    if !time_grads # i think this mutates 
+        result["cmaes_result"] = cmaes_result
+        result["cmaes_time"] = cmaes_time
+    end
+
     return result
 end
 
@@ -138,7 +154,17 @@ function plot_grads(grads)
 end
 
 # --- combined driver: builds both plots from a fit result + raw data, and saves them ---
-function ig_plot_loss_and_fits(result, datafile)
+function ig_plot_loss_and_fits(result)
+    datafile = result["datafile"]
+    savedir = result["save_dir"]
+    my_model = result["my_model"]
+    cmaes_result   = result["cmaes_result"]
+    cmaes_loss_history = cmaes_result.loss_history
+    cmaes_fit_params = cmaes_result.fit_params
+    gd_result = result["gd_result"]
+    gd_loss_history = gd_result.loss_history
+    gd_fit_params = gd_result.fit_params
+
     @load datafile data
     @load datafile func_form
     @load datafile true_params
@@ -151,14 +177,7 @@ function ig_plot_loss_and_fits(result, datafile)
     x_grid_flexi = collect(LinRange(0.0, 1.0, 500))
 
 
-    savedir = result["save_dir"]
-    my_model = result["my_model"]
-    cmaes_result   = result["cmaes_result"]
-    cmaes_loss_history = cmaes_result.loss_history
-    cmaes_fit_params = cmaes_result.fit_params
-    gd_result = result["gd_result"]
-    gd_loss_history = gd_result.loss_history
-    gd_fit_params = gd_result.fit_params
+    
 
 
     y_true  = true_func.(x_grid)
@@ -197,9 +216,9 @@ function ig_plot_loss_and_fits(result, datafile)
     return fig1, fig2, fig3
 end
 
-function plot_loss_and_fits(results, datafile) 
+function plot_loss_and_fits(results) 
     for result in results
-        ig_plot_loss_and_fits(result, datafile)
+        ig_plot_loss_and_fits(result)
     end
 
 end
