@@ -87,16 +87,14 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     end
 
     
-    base = (fit_params = sol.u, loss_history = loss_history,
+    result = (fit_params = sol.u, loss_history = loss_history,
+            gradient_history = config.save_parameters ? gradient_history : nothing,
+            parameter_history = config.save_parameters ? parameter_history : nothing,
             num_grad_evals = config.time_grads ? grad_eval_count[] : nothing,
             grad_time_history = config.time_grads ? grad_time_history : nothing)
 
-    if config.save_parameters
-        result = merge(base, (gradient_history = gradient_history, parameter_history = parameter_history))
-    else
-        result = base
-    end
-    return result
+
+
     return result
     
 end

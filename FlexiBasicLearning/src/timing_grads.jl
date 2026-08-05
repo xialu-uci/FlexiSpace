@@ -12,11 +12,14 @@ using Statistics
 # ------------------------------------------------------------------
 # setup
 # ------------------------------------------------------------------
-expdir = "../FlexiSpaceLocal/exp/08032026/"
+expdir = "../FlexiSpaceLocal/tests/08052026/added-grad-comp-counter"
 datadir_base = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
-dofs = [3, 4, 5, 20, 50]
-num_points_list = [3, 5, 10, 20, 50, 100]
+# dofs = [3, 4, 5, 20, 50]
+# num_points_list = [3, 5, 10, 20, 50, 100]
+# test smaller sweep
+# dofs = [3,4]
+# num_points_list = [3,5]
 shapes = [FlexiBasicLearning.crooked_flexi, FlexiBasicLearning.cu_flexi, FlexiBasicLearning.cd_flexi]
 funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func]
 
@@ -42,7 +45,7 @@ end
 # main sweep
 # ------------------------------------------------------------------
 rows = NamedTuple[]
-
+gt_check = []
 for f in funcs, d in dofs, s in shapes, np in num_points_list
     fname = FlexiBasicLearning.func_name(f)
     sname = FlexiBasicLearning.shape_name(s)
@@ -68,7 +71,7 @@ for f in funcs, d in dofs, s in shapes, np in num_points_list
 
     println(result[1])
     grad_times = result[1]["gd_result"].grad_time_history
-
+    push!(gt_check, grad_times)
     push!(rows, (
         func_form        = fname,
         func_string      = f_str,
@@ -79,9 +82,9 @@ for f in funcs, d in dofs, s in shapes, np in num_points_list
         median_grad_time = median(grad_times),
         total_grad_time  = sum(grad_times),
         grad_time_history = grad_times,   # full per-iteration vector
-        #n_grad_calls     = length(grad_times),
+        n_grad_calls     = result[1]["gd_result"].num_grad_evals,  # number of times gradient was evaluated
         gd_time          = result[1]["gd_time"],
-        cmaes_time       = result[1]["cmaes_time"],
+        # cmaes_time       = result[1]["cmaes_time"],
         save_dir         = savedir,
     ))
 end

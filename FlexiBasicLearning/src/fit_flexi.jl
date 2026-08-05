@@ -21,20 +21,21 @@ function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, maxite
         ig = deepcopy(my_model.params)
     end
     
-    
+    # save to savedir
+    mkpath(savedir) # creates the directory only if it doesn't already exist
     
     if !time_grads
         # skip cmaes if timing grads
         cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
+        # save cmaes results
+        @save joinpath(savedir, "cmaes_result.jld2") cmaes_result # maybe no save
 
     end
     # cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
     gd_time, gd_result = fit_gd(my_prob, ig; maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
 
-    # save to savedir
-    mkpath(savedir) # creates the directory only if it doesn't already exist
-    # save cmaes results
-    @save joinpath(savedir, "cmaes_result.jld2") cmaes_result # maybe no save?
+    
+    
     # save gd results
     @save joinpath(savedir, "gd_result.jld2") gd_result # maybe no save?
     println("Saved cmaes and gd results to $savedir")
