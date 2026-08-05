@@ -12,7 +12,7 @@ make_models = []
 
 # prefixes = []  # to hold the prefixes for each combination of func, dof, shape
 
-num_points = 20
+num_points = [20]
 dofs = [3, 4, 5, 20, 50]
 # dofs = [3]
 # dofs = [4,5,20,50]

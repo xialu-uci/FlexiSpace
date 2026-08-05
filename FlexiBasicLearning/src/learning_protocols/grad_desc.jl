@@ -29,6 +29,7 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
 
     parameter_history = config.save_parameters ? [] : nothing
     gradient_history = config.save_parameters ? [] : nothing
+    grad_time_history = config.time_grads ? [] : nothing
 
     
     
