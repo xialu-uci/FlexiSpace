@@ -4,11 +4,12 @@
 using FlexiBasicLearning
 using CairoMakie
 
-function end_to_end_gd_tracking(results_all_ig, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
+function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     @load datafile true_params
     for result in results_all_ig
         gd_result = result["gd_result"]
         savedir = result["save_dir"]
+        datafile = result["datafile"]
        
         result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_params)
         # plot stuff

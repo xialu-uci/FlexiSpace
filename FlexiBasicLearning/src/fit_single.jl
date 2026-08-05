@@ -55,6 +55,7 @@ func_key  = ARGS[1]
 d         = parse(Int, ARGS[2])
 shape_key = ARGS[3]
 
+#TODO: Test if refactoring still works for fitting.
 # func_key  = "flexi1"
 # d         = 3
 # shape_key = "crooked"

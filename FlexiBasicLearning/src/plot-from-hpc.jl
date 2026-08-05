@@ -54,7 +54,7 @@ for func_key in keys(func_info), d in dofs, shape_key in keys(shapes)
     println("Plotting: func=$func_key dof=$d shape=$shape_key")
     try
         @load results_file results
-        FlexiBasicLearning.plot_loss_and_fits(results, datafile)
+        FlexiBasicLearning.plot_loss_and_fits(results, datafile) #TODO: Modify plotting calls, test if new structure works for plotting
         FlexiBasicLearning.end_to_end_gd_tracking(results, datafile; func_form = f, func_string = f_str)
         global n_ok += 1
     catch e
