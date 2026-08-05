@@ -15,39 +15,14 @@ using Random
 
 function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, maxiters = 10000, save_parameters = false, time_grads = false)
     @load datafile data
-    # num_points = size(data)[1]
-    # full = Vector{Bool}(trues(num_points))
-    # my_model = make_model()
-    # my_prob = LearningProblem(
-    #     data = data,
-    #     model = my_model,
-    #     mask = full
-    # )
+    
     my_prob, my_model = set_up_prob(data, make_model)
     if isnothing(ig)
         ig = deepcopy(my_model.params)
     end
-    # ig = deepcopy(my_model.params)
     
-    # check sensitivity 
-    # base_loss = get_loss(ig; learning_problem=my_prob)
-    # for sigma in [0.01, 0.05, 0.1, 0.14]
-    #     for trial in 1:5
-    #         direction = randn(length(ig))
-    #         perturbed = ig .+ sigma .* direction
-    #         Δ = get_loss(perturbed; learning_problem=my_prob) - base_loss
-    #         println("sigma=$sigma, trial=$trial: Δloss = $Δ")
-    #     end
-    # end
     
-    # t0 = time()
-    # cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
-    # cmaes_time = time() - t0
-    # println("cmaes time:$cmaes_time ") 
-    # t1 = time() 
-    # gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
-    # gd_time = time() - t1
-    # println("gd time:$gd_time ")
+    
     if !time_grads
         # skip cmaes if timing grads
         cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
@@ -245,33 +220,3 @@ end
 # test 1: not entering ig should use default ig from model
 # test 2: entering 1 ig should use that ig
 # test 3: entering multiple igs should run multiple fits and return a list of results
-# function plot_flexi(flexi_params::AbstractVector{<:Real}; npoints::Int=500)
-#     """
-#     Generate a figure of the flexifunction defined by `flexi_params`.
-
-#     The flexifunction is computed using `FlexiFunctions.evaluate_decompress`
-#     on the interval [0,1]. A line plot is created and saved to
-#     `savedir/flexi_plot.png`. The figure is returned for further use.
-#     """
-
-#     # prepare evaluation points
-#     xs = range(0.0, 1.0; length=npoints)
-#     ys = [FlexiFunctions.evaluate_decompress(x, flexi_params) for x in xs]
-
-#     # create figure
-#     fig = Figure(size=(800, 400))
-#     ax = Makie.Axis(fig[1,1],
-#                     xlabel="x",
-#                     ylabel="flexi(x)",
-#                     title="Flexi function")
-#     lines!(ax, xs, ys, color=:blue, linewidth=2)
-#     ax.xgridvisible = true
-#     ax.ygridvisible = true
-
-#     # save and report
-#     # save_path = joinpath(savedir, "flexi_plot.png")
-#     # save(save_path, fig)
-#     # println("Flexi plot saved to: $save_path")
-
-#     return fig
-# end
