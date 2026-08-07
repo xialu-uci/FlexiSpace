@@ -1,11 +1,19 @@
 
 using Optimization
 using OptimizationOptimJL
+using OptimizationOptimisers
 using SciMLSensitivity
 using LineSearches
 using Zygote
 
-function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_frequency = 1000, save_parameters = false, time_grads = false)
+function gradient_descent_learn(learning_problem, ig; 
+    optimizer = gradient_descent, 
+    learning_rate=0.01, # for adam
+    linesearch=nothing, # for gd or bfgs
+    maxiters=10000, 
+    print_frequency = 1000, 
+    save_parameters = false, 
+    time_grads = false)
 
     function flexi_loss(params, p)
        
@@ -63,8 +71,16 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
             println("In grad_descent, iteration $current_iter: loss=$lossval, qdrms=$qdrms at $(now())")
             flush(stdout)
         end
-        return false
+
+        # early stopping: if within sqrt(eps()) of the minimum loss, stop early (this is consistent with hager zhang 2006)
+        if lossval < config.constants.min_loss + sqrt(eps())
+            println("Early stopping: loss $lossval is within sqrt(eps()) of the minimum loss $(config.constants.min_loss) at iteration $current_iter")
+            return true
+        end
+        return false 
     end
+
+
 
     if config.time_grads
         optf = Optimization.OptimizationFunction(flexi_loss; grad = counted_grad!)
@@ -75,10 +91,12 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     
 
     prob = Optimization.OptimizationProblem(optf, ig) 
-    
-    sol = solve(prob, OptimizationOptimJL.GradientDescent(); callback=callback, maxiters=maxiters)
-    
 
+    opt_alg = build_optimizer(optimizer; learning_rate=learning_rate, linesearch=linesearch)
+
+    
+    sol = solve(prob, opt_alg; callback=callback, maxiters=maxiters)
+    
     
     println("Final loss: $(sol.objective)")
 
@@ -97,4 +115,21 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
 
     return result
     
+end
+
+# helper builds optimizer
+function build_optimizer(name::Symbol; learning_rate=0.01, linesearch=nothing)
+    if name == :gradient_descent
+        return linesearch === nothing ?
+            OptimizationOptimJL.GradientDescent() :
+            OptimizationOptimJL.GradientDescent(linesearch=linesearch)
+    elseif name == :bfgs
+        return linesearch === nothing ?
+            OptimizationOptimJL.BFGS() :
+            OptimizationOptimJL.BFGS(linesearch=linesearch)
+    elseif name == :adam
+        return OptimizationOptimisers.Adam(learning_rate)
+    else
+        error("Unknown optimizer :$name. Supported: :gradient_descent, :bfgs, :adam")
+    end
 end

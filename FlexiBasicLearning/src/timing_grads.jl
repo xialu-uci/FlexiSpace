@@ -12,7 +12,7 @@ using Statistics
 # ------------------------------------------------------------------
 # setup
 # ------------------------------------------------------------------
-expdir = "../FlexiSpaceLocal/tests/08052026/added-grad-comp-counter"
+expdir = "../FlexiSpaceLocal/exp/08052026/added-grad-comp-counter"
 datadir_base = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # dofs = [3, 4, 5, 20, 50]
@@ -20,6 +20,9 @@ datadir_base = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 # test smaller sweep
 # dofs = [3,4]
 # num_points_list = [3,5]
+
+dofs = [2, 3, 4, 5, 8, 16, 20, 32, 50, 64, 128, 254]
+num_points_list = [2,3, 4, 5, 8, 10, 16, 20, 32, 50, 64, 100, 128, 254]
 shapes = [FlexiBasicLearning.crooked_flexi, FlexiBasicLearning.cu_flexi, FlexiBasicLearning.cd_flexi]
 funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func]
 

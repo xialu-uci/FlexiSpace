@@ -2,7 +2,7 @@
 
 julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "7dd7fd59edadf2aa33b49a628e68b3a2a5da2d1d"
+project_hash = "c7b16ceccdb6dc1be17b3131abcb55f5d94cedac"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "d9aaef7c63466eee4de23b4d9dad03629df54bea"
@@ -825,6 +825,12 @@ weakdeps = ["PDMats", "SparseArrays", "StaticArrays", "Statistics"]
     FillArraysSparseArraysExt = "SparseArrays"
     FillArraysStaticArraysExt = "StaticArrays"
     FillArraysStatisticsExt = "Statistics"
+
+[[deps.FindFirstFunctions]]
+deps = ["PrecompileTools"]
+git-tree-sha1 = "bba475ce782fc77777f539cf0b7c029207798db1"
+uuid = "64ca27bc-2ba2-4a57-88aa-44e436879224"
+version = "3.2.1"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Setfield"]
@@ -1882,6 +1888,12 @@ git-tree-sha1 = "c1494ecd921c413ce27706784e06907a4ed5bfc1"
 uuid = "36348300-93cb-4f02-beb5-3c3902f8871e"
 version = "0.4.14"
 
+[[deps.OptimizationOptimisers]]
+deps = ["Logging", "Optimisers", "OptimizationBase", "Reexport", "SciMLBase", "SciMLLogging"]
+git-tree-sha1 = "d7414b3eb9fec8ad9d77aed6730eaff6276e35a0"
+uuid = "42dfb2eb-d2b4-4451-abcd-913932933ac1"
+version = "0.3.21"
+
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "e2bb57a313a74b8104064b7efd01406c0a50d2ff"
@@ -2327,10 +2339,10 @@ uuid = "fdea26ae-647d-5447-a871-4b548cad5224"
 version = "3.7.2"
 
 [[deps.SciMLBase]]
-deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "Random", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLLogging", "SciMLOperators", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "58cc83369cf114cc4c24f005346e0e7d1bf4bb64"
+deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FindFirstFunctions", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "Random", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLLogging", "SciMLOperators", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
+git-tree-sha1 = "32e737a78dae3baa8c469c35f1aba29fe058db35"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "3.22.0"
+version = "3.39.1"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
@@ -2338,6 +2350,7 @@ version = "3.22.0"
     SciMLBaseDistributionsExt = "Distributions"
     SciMLBaseEnzymeExt = "Enzyme"
     SciMLBaseForwardDiffExt = "ForwardDiff"
+    SciMLBaseFunctionPropertiesExt = "FunctionProperties"
     SciMLBaseMakieExt = "Makie"
     SciMLBaseMeasurementsExt = "Measurements"
     SciMLBaseMonteCarloMeasurementsExt = "MonteCarloMeasurements"
@@ -2358,6 +2371,7 @@ version = "3.22.0"
     Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
     ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+    FunctionProperties = "f62d2435-5019-4c03-9749-2d4c77af0cbc"
     Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
     Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
     MonteCarloMeasurements = "0987c9cc-fe09-11e8-30f0-b96dd679fdca"
