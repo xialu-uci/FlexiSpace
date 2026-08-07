@@ -15,6 +15,9 @@ function gradient_descent_learn(learning_problem, ig;
     save_parameters = false, 
     time_grads = false)
 
+    # timing
+    t0 = time()
+
     function flexi_loss(params, p)
        
         loss = get_loss(params; learning_problem=learning_problem, gradient_mode=true)
@@ -104,8 +107,9 @@ function gradient_descent_learn(learning_problem, ig;
         println("Total gradient evaluations: $(grad_eval_count[])")
     end
 
-    
-    result = (fit_params = sol.u, loss_history = loss_history,
+    time = time() - t0
+    println("Gradient descent ($optimizer) time: $time")
+    result = (fit_params = sol.u, loss_history = loss_history, optimizer = optimizer, time = time,
             gradient_history = config.save_parameters ? gradient_history : nothing,
             parameter_history = config.save_parameters ? parameter_history : nothing,
             num_grad_evals = config.time_grads ? grad_eval_count[] : nothing,

@@ -44,6 +44,8 @@ end
 # CMA-ES implementation
 function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     
+    # timing
+    t0 = time()
     
     # Track best solution during optimization
     best_loss = Inf
@@ -155,7 +157,9 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
 
     # convergence_status = sol.retcode == :success ? :converged : :max_iterations
     # TODO: modify to be a result with fields
-    result = (fit_params = fit_params, loss_history = loss_history)
+    time = time() - t0
+    println("cmaes time:$cmaes_time ")
+    result = (fit_params = fit_params, loss_history = loss_history, time = time)
     return result
 end# CMA-ES Learning Protocol Implementation
 
