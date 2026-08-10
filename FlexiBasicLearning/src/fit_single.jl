@@ -8,7 +8,7 @@ using LinearAlgebra
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
 const num_points = 20
-const expdir  = "../FlexiSpaceLocal/tests/08052026/refactoring-test-1"
+const expdir  = "../FlexiSpaceLocal/tests/08102025-apple"
 const datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
@@ -59,7 +59,7 @@ shape_key = ARGS[3]
 
 
 # uncomment for local testing
-func_key  = "flexi1"
+# func_key  = "flexi1"
 # d         = 3
 # shape_key = "crooked"
 
