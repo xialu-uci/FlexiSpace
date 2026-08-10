@@ -14,27 +14,6 @@ num_points = 20
 expdir  = "../FlexiSpaceLocal/tests/0807026/other-algs-test-1"
 datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
-# func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
-# func_string used for plot titles.
-func_info = Dict(
-    "flexi1"      => (FlexiBasicLearning.make_flexi1_func,      "y = f(t)"),
-    "flexi1_alg1" => (FlexiBasicLearning.make_flexi1_alg1_func, "y = t \u22c5 f(t)"),
-    "flexi1_ode1" => (FlexiBasicLearning.make_flexi1_ode1_func, "y' = f(y)"),
-)
-
-shapes = Dict(
-    "crooked" => FlexiBasicLearning.crooked_flexi,
-    "cu"      => FlexiBasicLearning.cu_flexi,
-    "cd"      => FlexiBasicLearning.cd_flexi,
-)
-
-# maps func_key -> (dof -> make_model closure)
-model_makers = Dict(
-    "flexi1"      => d -> () -> FlexiBasicLearning.make_ModelFlexi1(;flexi_dofs=d),
-    "flexi1_alg1" => d -> () -> FlexiBasicLearning.make_ModelFlexiAlg(;flexi_dofs=d),  # same structure for now
-    "flexi1_ode1" => d -> () -> FlexiBasicLearning.make_ModelFlexiODE(;flexi_dofs=d),
-)
-
 # ------------------------------------------------------------------
 # CLI args: func_key  dof  shape_key
 # ------------------------------------------------------------------
@@ -67,11 +46,11 @@ d         = 3
 shape_key = "crooked"
 
 
-haskey(func_info, func_key) || error("Unknown func_key '$func_key'. Options: $(collect(keys(func_info)))")
-haskey(shapes, shape_key)   || error("Unknown shape_key '$shape_key'. Options: $(collect(keys(shapes)))")
+haskey(FlexiBasicLearning.func_info, func_key) || error("Unknown func_key '$func_key'. Options: $(collect(keys(FlexiBasicLearning.func_info)))")
+haskey(FlexiBasicLearning.shapes, shape_key)   || error("Unknown shape_key '$shape_key'. Options: $(collect(keys(FlexiBasicLearning.shapes)))")
 
-f, f_str = func_info[func_key]
-s        = shapes[shape_key]
+f, f_str = FlexiBasicLearning.func_info[func_key]
+s        = FlexiBasicLearning.shapes[shape_key]
 
 # ------------------------------------------------------------------
 # Reconstruct paths / model 
@@ -83,7 +62,7 @@ subfolder = "$(fname)-$(d)dof-$(num_points)obs"
 savedir   = joinpath(expdir, subfolder, sname)
 datafile  = joinpath(datadir, subfolder, "sim_data_$(sname).jld2")
 
-make_model = model_makers[func_key](d)
+make_model = FlexiBasicLearning.model_makers[func_key](d)
 
 # ------------------------------------------------------------------
 # Run

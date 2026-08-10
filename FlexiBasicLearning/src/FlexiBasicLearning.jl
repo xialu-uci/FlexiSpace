@@ -59,6 +59,26 @@ include("sim_data.jl") # use naming functions in other files
 include("loss_slicing.jl") # for looking at loss vs. params and other stuff.
 include("gd_tracking.jl") # for looking at where gd goes
 
+# for my for loops
+const func_info = Dict(
+    "flexi1"      => (FlexiBasicLearning.make_flexi1_func,      "y = f(t)"),
+    "flexi1_alg1" => (FlexiBasicLearning.make_flexi1_alg1_func, "y = t \u22c5 f(t)"),
+    "flexi1_ode1" => (FlexiBasicLearning.make_flexi1_ode1_func, "y' = f(y)"),
+)
+
+const shapes = Dict(
+    "crooked" => FlexiBasicLearning.crooked_flexi,
+    "cu"      => FlexiBasicLearning.cu_flexi,
+    "cd"      => FlexiBasicLearning.cd_flexi,
+)
+
+# maps func_key -> (dof -> make_model closure)
+const model_makers = Dict(
+    "flexi1"      => d -> () -> FlexiBasicLearning.make_ModelFlexi1(;flexi_dofs=d),
+    "flexi1_alg1" => d -> () -> FlexiBasicLearning.make_ModelFlexiAlg(;flexi_dofs=d),  # same structure for now
+    "flexi1_ode1" => d -> () -> FlexiBasicLearning.make_ModelFlexiODE(;flexi_dofs=d),
+)
+
 
 
 end # module FlexiBasicLearning
