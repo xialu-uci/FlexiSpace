@@ -8,7 +8,7 @@ using LinearAlgebra
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
 const num_points = 20
-const expdir  = "../FlexiSpaceLocal/tests/08052026/refactoring-test-1"
+const expdir  = "../FlexiSpaceLocal/tests/08102025-apple"
 const datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
@@ -52,16 +52,16 @@ const model_makers = Dict(
 # length(ARGS) < 3 && usage_and_exit()
 
 # # uncomment for HPC
-# func_key  = ARGS[1]
-# d         = parse(Int, ARGS[2])
-# shape_key = ARGS[3]
+func_key  = ARGS[1]
+d         = parse(Int, ARGS[2])
+shape_key = ARGS[3]
 
 
-#TODO: Test if refactoring still works for fitting.func_key  = ARGS[1]
+
 # uncomment for local testing
-func_key  = "flexi1"
-d         = 3
-shape_key = "crooked"
+# func_key  = "flexi1"
+# d         = 3
+# shape_key = "crooked"
 
 
 haskey(func_info, func_key) || error("Unknown func_key '$func_key'. Options: $(collect(keys(func_info)))")
@@ -86,9 +86,9 @@ make_model = model_makers[func_key](d)
 # Run
 # ------------------------------------------------------------------
 println("Fitting for datafile: $datafile")
-result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model, save_parameters = true)
+result = FlexiBasicLearning.fit_all_algs(datafile, savedir, make_model, save_parameters = true)
 println("Finished fitting for datafile: $datafile")
 
 # uncomment for local testing
-FlexiBasicLearning.plot_loss_and_fits(result)
-FlexiBasicLearning.end_to_end_gd_tracking(result; func_form = f, func_string = f_str)
+# FlexiBasicLearning.plot_loss_and_fits(result)
+# FlexiBasicLearning.end_to_end_gd_tracking(result; func_form = f, func_string = f_str)

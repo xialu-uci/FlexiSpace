@@ -94,7 +94,7 @@ println("Finished fitting for datafile: $datafile")
 
 # uncomment for local testing
 FlexiBasicLearning.make_fitting_figs(results)
-# FlexiBasicLearning.end_to_end_gd_tracking(result; func_form = f, func_string = f_str)
+FlexiBasicLearning.end_to_end_gd_tracking(results; func_form = f, func_string = f_str)
 
 # for 1 model types (try difficult ones): 
     # do bfgs, gd, adam, cmaes. (save_parmameters = true)

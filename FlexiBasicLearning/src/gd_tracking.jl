@@ -8,22 +8,27 @@ function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.m
     # load datafile from results_all_ig
     datafile = results_all_ig[1]["datafile"] # datafile is the same for all results in results_all_ig
     @load datafile true_params
-    for result in results_all_ig
-        gd_result = result["gd_result"]
-        savedir = result["save_dir"]
+    for ig in results_all_ig
+        optimizers = ig["optimizers"]
+        gd_results = [ig["gd_$(optimizer)_result"] for optimizer in ig["optimizers"]]
+    
+        # gd_result = ig["gd_result"]
+        savedir = ig["save_dir"]
         # datafile = result["datafile"]
-       
-        result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_params)
-        # plot stuff
-        plot_gd_tracker(result_gd_tracker, savedir)
-        plot_param_history(gd_result, savedir, datafile; func_form = func_form, func_string = func_string, n_points = n_points, n_intermediate = n_intermediate)
+        for (alg, gd_result) in zip(optimizers, gd_results)
+            result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_params)
+            # plot stuff
+            plot_gd_tracker(result_gd_tracker, alg, savedir)
+            plot_param_history(gd_result, alg, savedir, datafile; func_form = func_form, func_string = func_string, n_points = n_points, n_intermediate = n_intermediate)
+        end 
     end
 
 end
 
 function gd_tracking(result, gt)
     norms = LinearAlgebra.norm.(result.gradient_history)
-    dots = dot.(result.gradient_history, Ref(gt))
+    unit_grads = normalize.(result.gradient_history) 
+    dots = dot.(unit_grads, Ref(normalize(gt)))
     dists = dist.(result.parameter_history, Ref(gt))
     gd_tracker = (norms=norms, dots = dots, dists = dists)
     return gd_tracker
@@ -35,29 +40,29 @@ function dist(u,v)
     return LinearAlgebra.norm(u-v)
 end
 
-function plot_gd_tracker(gd_tracker, savedir)
+function plot_gd_tracker(gd_tracker, alg, savedir)
     iters = 1:length(gd_tracker.norms)
 
     fig = Figure(size = (900, 900))
 
     ax1 = CairoMakie.Axis(fig[1, 1], ylabel = "‖grad‖", yscale = log10,
-               title = "Gradient norm vs. iteration")
+               title = "Gradient norm vs. $alg iteration")
     lines!(ax1, iters, gd_tracker.norms)
 
     ax2 = CairoMakie.Axis(fig[2, 1], ylabel = "grad ⋅ grad_true",
-               title = "Gradient ⋅ Truth vs. iteration")
+               title = "Normalized Gradient ⋅ Truth vs. $alg iteration")
     lines!(ax2, iters, gd_tracker.dots)
     hlines!(ax2, [0.0], color = :gray, linestyle = :dash)
 
     ax3 = CairoMakie.Axis(fig[3, 1], xlabel = "iteration", ylabel = "‖u - u_true‖",
-               yscale = log10, title = "Distance to true parameters vs. iteration")
+               yscale = log10, title = "Distance to true parameters vs. $alg iteration")
     lines!(ax3, iters, gd_tracker.dists)
 
-    save(joinpath(savedir, "gd_tracker.png"), fig)
+    save(joinpath(savedir, "gd_tracker_$alg.png"), fig)
     return fig
 end
 
-function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
+function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     @load datafile data 
     @load datafile true_params
     x_data = data[:, 1]
@@ -95,7 +100,7 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
     fig1 = Figure(size =(800, 600))
 
     ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = "x (flexifunction argument)", ylabel = "f(x)",
-              title = "Flexifunction Only History for $func_string")
+              title = "Fiting with $alg - Flexifunction Only History for $func_string")
 
 
     # save 
@@ -105,14 +110,14 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
     end
 
     axislegend(ax1, position = :rt)
-    save(joinpath(savedir, "flexifunction_history.png"), fig1)
+    save(joinpath(savedir, "flexifunction_history_$alg.png"), fig1)
 
     
     
     fig2 = Figure(size =(800, 600))
 
     ax2 = CairoMakie.Axis(fig2[1, 1], xlabel = "t", ylabel = "y",
-            title = "$func_string with Flexifunction History")
+            title = "Fiting with $alg - $func_string with Flexifunction History")
 
 
     # save 
@@ -128,7 +133,7 @@ function plot_param_history(result, savedir, datafile; func_form = FlexiBasicLea
 
 
     axislegend(ax2, position = :rt)
-    save(joinpath(savedir, "fullfunction_history.png"), fig2)
+    save(joinpath(savedir, "fullfunction_history_$alg.png"), fig2)
 
     
     return fig1, fig2
