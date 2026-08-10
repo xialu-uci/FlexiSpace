@@ -1,26 +1,39 @@
 
 using Optimization
 using OptimizationOptimJL
+using OptimizationOptimisers
 using SciMLSensitivity
 using LineSearches
 using Zygote
+using FlexiBasicLearning
 
-function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_frequency = 1000, save_parameters = false, time_grads = false)
+function gradient_descent_learn(learning_problem, ig; 
+    optimizer = :gradient_descent, 
+    learning_rate=0.01, # for adam
+    linesearch=nothing, # for gd or bfgs
+    maxiters=10000, 
+    print_frequency = 1000, 
+    save_parameters = false, 
+    time_grads = false)
+
+    # timing
+    t0 = Base.time()
 
     function flexi_loss(params, p)
-       #println("USING TRY/CATCH VERSION")
-       #loss = try
+       
         loss = get_loss(params; learning_problem=learning_problem, gradient_mode=true)
-    #    catch e
-    #        println("CAUGHT: $(typeof(e))")
-    #        if e isa InexactError || e isa DomainError
-    #            return 1e12
-    #        else
-    #            rethrow(e)
-    #        end
-    #    end
+    
        return loss
-   end
+    end
+
+    grad_eval_count = Ref(0)
+
+    function counted_grad!(G, params, p)
+        grad_eval_count[] += 1
+        g = Zygote.gradient(θ -> flexi_loss(θ, p), params)[1]
+        G .= g
+        return nothing
+    end
 
     loss_history = Float64[]
     # grad_norm_history = Float64[]
@@ -30,15 +43,14 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
     parameter_history = config.save_parameters ? [] : nothing
     gradient_history = config.save_parameters ? [] : nothing
     grad_time_history = config.time_grads ? [] : nothing
-
     
     
-    # TODO: modify to use config
+    
     function callback(p, lossval)
         push!(loss_history, lossval)
         current_iter = length(loss_history)
-        # println("callback iter $current_iter: loss=$lossval, norm(u)=$(sqrt(sum(p.u.^2))), norm(grad)=$(sqrt(sum(p.grad.^2)))")
-        # in callback: compute gradient again? time it and print it here.
+        
+        
 
         if config.save_parameters
             # if current_iter % config.print_frequency == 0
@@ -49,6 +61,8 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
         end
 
         if config.time_grads
+            # TODO: retrieve number of times that gradient was evaluated (not here but in the optimization function) and store it in config.num_grad_evals
+            Zygote.gradient(θ -> flexi_loss(θ, nothing), p.u) # compilation
             t0 = time_ns()
             Zygote.gradient(θ -> flexi_loss(θ, nothing), p.u)
             elapsed = (time_ns() - t0) / 1e9
@@ -61,51 +75,66 @@ function gradient_descent_learn(learning_problem, ig; maxiters=10000, print_freq
             println("In grad_descent, iteration $current_iter: loss=$lossval, qdrms=$qdrms at $(now())")
             flush(stdout)
         end
-        return false
+
+        # early stopping: if within sqrt(eps()) of the minimum loss, stop early (this is consistent with hager zhang 2006)
+        if lossval < config.min_loss + sqrt(eps())
+            println("Early stopping: loss $lossval is within sqrt(eps()) of the minimum loss $(config.min_loss) at iteration $current_iter")
+            return true
+        end
+        return false 
     end
 
-    optf = Optimization.OptimizationFunction(flexi_loss, Optimization.AutoZygote())
 
-    # flexi_bound = 1.0 # for cu, true max is always dof/srt(sum(1 to dof)(x^2)), but initial guess is 1/sqrt(dof)
 
-    # lb = 0.0*fill(flexi_bound, length(ig));#-1.0*fill(flexi_bound, length(ig))
-    # ub = +1.0*fill(flexi_bound, length(ig)) # how kosher is it for me to do this teehee
+    if config.time_grads
+        optf = Optimization.OptimizationFunction(flexi_loss; grad = counted_grad!)
+    else
+        optf = Optimization.OptimizationFunction(flexi_loss, Optimization.AutoZygote())
+    end
+
+    
 
     prob = Optimization.OptimizationProblem(optf, ig) 
-    # sol = solve(prob, OptimizationOptimJL.GradientDescent(linesearch = LineSearches.BackTracking(),
-    #                 alphaguess = LineSearches.InitialStatic(alpha = 1e-2)); callback=callback, maxiters=maxiters)
-    if config.time_grads
-        Zygote.gradient(θ -> flexi_loss(θ, nothing), ig)  # this compiles it
-    end
-    sol = solve(prob, OptimizationOptimJL.GradientDescent(); callback=callback, maxiters=maxiters)
-    # # could try other gradient descent optimizers (BFGS)
 
-    # function flexi_grad!(G, params, p)
-    #     g = Zygote.gradient(θ -> flexi_loss(θ, p), params)[1]
-    #     gnorm = sqrt(sum(g.^2))
-    #     max_norm = 1e3
-    #     if gnorm > max_norm
-    #         g = g .* (max_norm / gnorm)
-    #     end
-    #     G .= g
-    #     return nothing
-    # end
+    opt_alg = build_optimizer(optimizer; learning_rate=learning_rate, linesearch=linesearch)
 
-    # optf = Optimization.OptimizationFunction(flexi_loss, Optimization.AutoZygote(); grad = flexi_grad!)
-    # prob = Optimization.OptimizationProblem(optf, ig)
-    # sol = solve(prob, OptimizationOptimJL.GradientDescent(); callback=callback, maxiters=maxiters)
-
+    
+    sol = solve(prob, opt_alg; callback=callback, maxiters=maxiters)
+    
+    
     println("Final loss: $(sol.objective)")
 
-    # TODO: modify to be a result with fields
-    if config.save_parameters
-        result = (fit_params = sol.u, loss_history = loss_history, gradient_history = gradient_history,
-                  parameter_history = parameter_history,
-                  grad_time_history = config.time_grads ? grad_time_history : nothing)
-    else
-        result = (fit_params = sol.u, loss_history = loss_history,
-                  grad_time_history = config.time_grads ? grad_time_history : nothing)
+    if config.time_grads
+        println("Total gradient evaluations: $(grad_eval_count[])")
     end
+
+    time = Base.time() - t0
+    println("Gradient descent ($optimizer) time: $time")
+    result = (fit_params = sol.u, loss_history = loss_history, optimizer = optimizer, time = time,
+            gradient_history = config.save_parameters ? gradient_history : nothing,
+            parameter_history = config.save_parameters ? parameter_history : nothing,
+            num_grad_evals = config.time_grads ? grad_eval_count[] : nothing,
+            grad_time_history = config.time_grads ? grad_time_history : nothing)
+
+
+
     return result
     
+end
+
+# helper builds optimizer
+function build_optimizer(name::Symbol; learning_rate=0.01, linesearch=nothing)
+    if name == :gradient_descent
+        return linesearch === nothing ?
+            OptimizationOptimJL.GradientDescent() :
+            OptimizationOptimJL.GradientDescent(linesearch=linesearch)
+    elseif name == :bfgs
+        return linesearch === nothing ?
+            OptimizationOptimJL.BFGS() :
+            OptimizationOptimJL.BFGS(linesearch=linesearch)
+    elseif name == :adam
+        return OptimizationOptimisers.Adam(learning_rate)
+    else
+        error("Unknown optimizer :$name. Supported: :gradient_descent, :bfgs, :adam")
+    end
 end

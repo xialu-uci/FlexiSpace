@@ -5,65 +5,57 @@ using LinearAlgebra
 using Random
 #load crooked sim data
 
-datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
-#
+# datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
+
+#080502026 edits:
+
+    #(1) saving datafile to results dict, plotting functions now load datafile from results dict, instead of passing it in as an argument
+    #(2) helper functions to set_up_prob(), fit_cmaes(), fit_gd() to make it easier to call separately.
+    #(3) if time_grads = true, skip cmaes and only run gd, since cmaes is not needed for timing grads
 
 function ig_fit_cmaes_and_gd(datafile, savedir, make_model; ig = nothing, maxiters = 10000, save_parameters = false, time_grads = false)
     @load datafile data
-    # num_points = size(data)[1]
-    # full = Vector{Bool}(trues(num_points))
-    # my_model = make_model()
-    # my_prob = LearningProblem(
-    #     data = data,
-    #     model = my_model,
-    #     mask = full
-    # )
+    
     my_prob, my_model = set_up_prob(data, make_model)
     if isnothing(ig)
         ig = deepcopy(my_model.params)
     end
-    # ig = deepcopy(my_model.params)
     
-    # check sensitivity 
-    # base_loss = get_loss(ig; learning_problem=my_prob)
-    # for sigma in [0.01, 0.05, 0.1, 0.14]
-    #     for trial in 1:5
-    #         direction = randn(length(ig))
-    #         perturbed = ig .+ sigma .* direction
-    #         Δ = get_loss(perturbed; learning_problem=my_prob) - base_loss
-    #         println("sigma=$sigma, trial=$trial: Δloss = $Δ")
-    #     end
-    # end
-    
-    # t0 = time()
-    # cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
-    # cmaes_time = time() - t0
-    # println("cmaes time:$cmaes_time ") 
-    # t1 = time() 
-    # gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
-    # gd_time = time() - t1
-    # println("gd time:$gd_time ")
-    cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
-    gd_time, gd_result = fit_gd(my_prob, ig; maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
-
     # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
-    # save cmaes results
-    @save joinpath(savedir, "cmaes_result.jld2") cmaes_result # maybe no save?
+    
+    if !time_grads
+        # skip cmaes if timing grads
+        cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
+        # save cmaes results
+        @save joinpath(savedir, "cmaes_result.jld2") cmaes_result # maybe no save
+
+    end
+    # cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
+    gd_time, gd_result = fit_gd(my_prob, ig; maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
+
+    
+    
     # save gd results
     @save joinpath(savedir, "gd_result.jld2") gd_result # maybe no save?
     println("Saved cmaes and gd results to $savedir")
     # make a result (that holds both results for easier use in plotting functions)
+
+    # result excludes all cmaes if time_grads is true, since cmaes is skipped in that case
     result = Dict(
-        "datafile" => datafile,
-        "save_dir" => savedir,
-        "my_model" => my_model,
-        "cmaes_result" => cmaes_result,
-        "gd_result" => gd_result,
-        "cmaes_time" => cmaes_time,
-        "gd_time" => gd_time,
-        "ig" => ig
+    "datafile" => datafile,
+    "save_dir" => savedir,
+    "my_model" => my_model,
+    "gd_result" => gd_result,
+    "gd_time" => gd_time,
+    "ig" => ig
     )
+
+    if !time_grads # i think this mutates 
+        result["cmaes_result"] = cmaes_result
+        result["cmaes_time"] = cmaes_time
+    end
+
     return result
 end
 
@@ -100,7 +92,20 @@ function fit_gd(my_prob, ig; maxiters = 10000, save_parameters = false, time_gra
     return gd_time, gd_result
 end
 
+function set_up_prob(data, make_model)
+    # @load datafile data
+    num_points = size(data)[1]
+    full = Vector{Bool}(trues(num_points))
+    my_model = make_model()
+    my_prob = LearningProblem(
+        data = data,
+        model = my_model,
+        mask = full
+    )
+    return my_prob, my_model
+end
 
+function fit_cmaes(my_prob, ig)
 
 function plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = "Fit Comparison")
     fig = Figure(size = (800, 500))
@@ -115,13 +120,13 @@ function plot_fits(x, y_data, x_grid, y_true, y_cmaes, y_gd; title = "Fit Compar
 end
 
 # --- helper: loss histories, side by side ---
-function plot_loss(cmaes_loss_history, gd_loss_history)
+function plot_loss(cmaes_loss_history, gd_loss_history, cmaes_time, gd_time)
     fig = Figure(size = (900, 400))
     ax_cmaes = CairoMakie.Axis(fig[1, 1], xlabel = "iteration", ylabel = "loss",
-                    title = "CMA-ES loss", yscale = log10)
+                    title = "CMA-ES loss ($cmaes_time s)", yscale = log10)
     lines!(ax_cmaes, cmaes_loss_history, color = :red, linewidth = 2)
     ax_gd = CairoMakie.Axis(fig[1, 2], xlabel = "iteration", ylabel = "loss",
-                title = "Gradient descent loss", yscale = log10)
+                title = "Gradient descent loss ($gd_time s)", yscale = log10)
     lines!(ax_gd, gd_loss_history, color = :blue, linewidth = 2)
     linkyaxes!(ax_cmaes, ax_gd)
     return fig
@@ -138,7 +143,19 @@ function plot_grads(grads)
 end
 
 # --- combined driver: builds both plots from a fit result + raw data, and saves them ---
-function ig_plot_loss_and_fits(result, datafile)
+function ig_plot_loss_and_fits(result)
+    datafile = result["datafile"]
+    savedir = result["save_dir"]
+    my_model = result["my_model"]
+    cmaes_result   = result["cmaes_result"]
+    cmaes_loss_history = cmaes_result.loss_history
+    cmaes_fit_params = cmaes_result.fit_params
+    cmaes_time = result["cmaes_time"]
+    gd_result = result["gd_result"]
+    gd_loss_history = gd_result.loss_history
+    gd_fit_params = gd_result.fit_params
+    gd_time = result["gd_time"]
+
     @load datafile data
     @load datafile func_form
     @load datafile true_params
@@ -151,14 +168,7 @@ function ig_plot_loss_and_fits(result, datafile)
     x_grid_flexi = collect(LinRange(0.0, 1.0, 500))
 
 
-    savedir = result["save_dir"]
-    my_model = result["my_model"]
-    cmaes_result   = result["cmaes_result"]
-    cmaes_loss_history = cmaes_result.loss_history
-    cmaes_fit_params = cmaes_result.fit_params
-    gd_result = result["gd_result"]
-    gd_loss_history = gd_result.loss_history
-    gd_fit_params = gd_result.fit_params
+    
 
 
     y_true  = true_func.(x_grid)
@@ -179,7 +189,7 @@ function ig_plot_loss_and_fits(result, datafile)
 
 
 
-    fig2 = plot_loss(cmaes_loss_history, gd_loss_history)
+    fig2 = plot_loss(cmaes_loss_history, gd_loss_history, cmaes_time, gd_time)
     save(joinpath(savedir, "loss_history.png"), fig2)
 
     title3 = "Flexifunction only comparison (dofs=$(length(my_model.params)))"
@@ -197,9 +207,9 @@ function ig_plot_loss_and_fits(result, datafile)
     return fig1, fig2, fig3
 end
 
-function plot_loss_and_fits(results, datafile) 
+function plot_loss_and_fits(results) 
     for result in results
-        ig_plot_loss_and_fits(result, datafile)
+        ig_plot_loss_and_fits(result)
     end
 
 end
@@ -224,33 +234,3 @@ end
 # test 1: not entering ig should use default ig from model
 # test 2: entering 1 ig should use that ig
 # test 3: entering multiple igs should run multiple fits and return a list of results
-# function plot_flexi(flexi_params::AbstractVector{<:Real}; npoints::Int=500)
-#     """
-#     Generate a figure of the flexifunction defined by `flexi_params`.
-
-#     The flexifunction is computed using `FlexiFunctions.evaluate_decompress`
-#     on the interval [0,1]. A line plot is created and saved to
-#     `savedir/flexi_plot.png`. The figure is returned for further use.
-#     """
-
-#     # prepare evaluation points
-#     xs = range(0.0, 1.0; length=npoints)
-#     ys = [FlexiFunctions.evaluate_decompress(x, flexi_params) for x in xs]
-
-#     # create figure
-#     fig = Figure(size=(800, 400))
-#     ax = Makie.Axis(fig[1,1],
-#                     xlabel="x",
-#                     ylabel="flexi(x)",
-#                     title="Flexi function")
-#     lines!(ax, xs, ys, color=:blue, linewidth=2)
-#     ax.xgridvisible = true
-#     ax.ygridvisible = true
-
-#     # save and report
-#     # save_path = joinpath(savedir, "flexi_plot.png")
-#     # save(save_path, fig)
-#     # println("Flexi plot saved to: $save_path")
-
-#     return fig
-# end

@@ -1,7 +1,9 @@
 # first let's simulate data with no noise (from Jun)
 using FlexiBasicLearning
 using JLD2
+# using OrdinaryDiffEqCore
 using OrdinaryDiffEq  
+using SciMLBase
 
 
 function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = crooked_flexi, ode = false, save_name = nothing)
@@ -159,10 +161,10 @@ end
 # shapes = [crooked_flexi, cu_flexi, cd_flexi]
 # funcs = [make_flexi1_func, make_flexi1_alg1_func]
 # num_points = 20
-num_points = [3, 5, 10, 50, 100]
-dofs = [3,4,5,20,50]
+num_points = [2, 4, 8, 16, 32, 64, 128, 254]
+dofs = [2, 4, 8, 16, 32, 64, 128, 254]
 shapes = [crooked_flexi, cu_flexi, cd_flexi]
-# funcs = [make_flexi1_ode1_func]
+# # funcs = [make_flexi1_ode1_func]
 funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
 for n in num_points, f in funcs, d in dofs, s in shapes

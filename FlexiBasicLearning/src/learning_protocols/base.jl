@@ -15,11 +15,12 @@ struct CallbackConfig
     time_grads::Bool
     verbose::Bool
     constants::LearningConstants
+    min_loss::Float64
 end
 
 CallbackConfig(; print_frequency=100, save_parameters=false, time_grads=false, verbose=true, 
-               constants=DEFAULT_LEARNING_CONSTANTS) = 
-    CallbackConfig(print_frequency, save_parameters, time_grads, verbose, constants)
+               constants=DEFAULT_LEARNING_CONSTANTS, min_loss=0.0) = 
+    CallbackConfig(print_frequency, save_parameters, time_grads, verbose, constants, min_loss)
 
     # Standardized callback functions
 function create_standard_callback(protocol_name::String, config::CallbackConfig)

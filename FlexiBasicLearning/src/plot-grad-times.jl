@@ -11,15 +11,16 @@ using DataFrames
 using CairoMakie
 using Statistics
 
-expdir = "../FlexiSpaceLocal/exp/08032026/"
+# expdir = "../FlexiSpaceLocal/exp/08032026/"
+expdir = "../FlexiSpaceLocal/exp/08052026/added-grad-comp-counter"
 df = JLD2.load(joinpath(expdir, "grad_time_results.jld2"), "df")
 
 # --- config -----------------------------------------------------------
 # NOTE: the old sweep fixed num_points = 20 for the dof-sweep plots.
 # 20 is not in the new num_points_list ([3, 5, 10, 50, 100]), so pick
 # a stand-in fixed value here -- change as needed.
-const FIXED_NUM_POINTS = 20
-const FIXED_DOF = 5
+const FIXED_NUM_POINTS = 32
+const FIXED_DOF = 32
 const METRIC = :mean_grad_time   # or :median_grad_time / :total_grad_time
 const METRIC_LABEL = "Mean gradient compute time (s)"
 

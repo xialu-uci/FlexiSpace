@@ -1,3 +1,6 @@
+# for a 1 model types (try simple one): do bfgs, gd, adam, cmaes. 
+    # want to see that: (1) each gd alg runs, (2) loss history is decreasing.
+
 using JLD2
 using FlexiBasicLearning
 using CairoMakie
@@ -7,26 +10,26 @@ using LinearAlgebra
 # ------------------------------------------------------------------
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
-const num_points = 20
-const expdir  = "../FlexiSpaceLocal/tests/08052026/refactoring-test-1"
-const datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
+num_points = 20
+expdir  = "../FlexiSpaceLocal/tests/0807026/other-algs-test-1"
+datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
 # func_string used for plot titles.
-const func_info = Dict(
+func_info = Dict(
     "flexi1"      => (FlexiBasicLearning.make_flexi1_func,      "y = f(t)"),
     "flexi1_alg1" => (FlexiBasicLearning.make_flexi1_alg1_func, "y = t \u22c5 f(t)"),
     "flexi1_ode1" => (FlexiBasicLearning.make_flexi1_ode1_func, "y' = f(y)"),
 )
 
-const shapes = Dict(
+shapes = Dict(
     "crooked" => FlexiBasicLearning.crooked_flexi,
     "cu"      => FlexiBasicLearning.cu_flexi,
     "cd"      => FlexiBasicLearning.cd_flexi,
 )
 
 # maps func_key -> (dof -> make_model closure)
-const model_makers = Dict(
+model_makers = Dict(
     "flexi1"      => d -> () -> FlexiBasicLearning.make_ModelFlexi1(;flexi_dofs=d),
     "flexi1_alg1" => d -> () -> FlexiBasicLearning.make_ModelFlexiAlg(;flexi_dofs=d),  # same structure for now
     "flexi1_ode1" => d -> () -> FlexiBasicLearning.make_ModelFlexiODE(;flexi_dofs=d),
@@ -86,9 +89,23 @@ make_model = model_makers[func_key](d)
 # Run
 # ------------------------------------------------------------------
 println("Fitting for datafile: $datafile")
-result = FlexiBasicLearning.fit_cmaes_and_gd(datafile, savedir, make_model, save_parameters = true)
+results = FlexiBasicLearning.fit_all_algs(datafile, savedir, make_model; optimizers = [:gradient_descent, :bfgs, :adam], save_parameters = true)
 println("Finished fitting for datafile: $datafile")
 
 # uncomment for local testing
-FlexiBasicLearning.plot_loss_and_fits(result)
-FlexiBasicLearning.end_to_end_gd_tracking(result; func_form = f, func_string = f_str)
+FlexiBasicLearning.make_fitting_figs(results)
+# FlexiBasicLearning.end_to_end_gd_tracking(result; func_form = f, func_string = f_str)
+
+# for 1 model types (try difficult ones): 
+    # do bfgs, gd, adam, cmaes. (save_parmameters = true)
+        # this is more like a preliminary result than a test.
+        # hope to see: (1) new gd algs are speedier than vanilla gd. do they perform on par with cmaes? does the gradient seem near zero at the end of optimization?
+   
+# for all model types: 
+    # do bfgs, gd, adam (low maxiter, time_grads = true, save_parameters = true)
+    # this is more like a preliminary result than a test.
+    # hope to see: (1) new gd algs are speedier than vanilla gd. how do the number of gradient eval calls compare across gd algs?
+
+
+# function fit_all_algs() <-- should be similar to fit_cmaes_and_gd, but takes a list of gd algs and runs them all, saving results in a single file. 
+
