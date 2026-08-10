@@ -5,9 +5,10 @@ using OptimizationOptimisers
 using SciMLSensitivity
 using LineSearches
 using Zygote
+using FlexiBasicLearning
 
 function gradient_descent_learn(learning_problem, ig; 
-    optimizer = gradient_descent, 
+    optimizer = :gradient_descent, 
     learning_rate=0.01, # for adam
     linesearch=nothing, # for gd or bfgs
     maxiters=10000, 
@@ -16,7 +17,7 @@ function gradient_descent_learn(learning_problem, ig;
     time_grads = false)
 
     # timing
-    t0 = time()
+    t0 = Base.time()
 
     function flexi_loss(params, p)
        
@@ -76,8 +77,8 @@ function gradient_descent_learn(learning_problem, ig;
         end
 
         # early stopping: if within sqrt(eps()) of the minimum loss, stop early (this is consistent with hager zhang 2006)
-        if lossval < config.constants.min_loss + sqrt(eps())
-            println("Early stopping: loss $lossval is within sqrt(eps()) of the minimum loss $(config.constants.min_loss) at iteration $current_iter")
+        if lossval < config.min_loss + sqrt(eps())
+            println("Early stopping: loss $lossval is within sqrt(eps()) of the minimum loss $(config.min_loss) at iteration $current_iter")
             return true
         end
         return false 
@@ -107,7 +108,7 @@ function gradient_descent_learn(learning_problem, ig;
         println("Total gradient evaluations: $(grad_eval_count[])")
     end
 
-    time = time() - t0
+    time = Base.time() - t0
     println("Gradient descent ($optimizer) time: $time")
     result = (fit_params = sol.u, loss_history = loss_history, optimizer = optimizer, time = time,
             gradient_history = config.save_parameters ? gradient_history : nothing,
