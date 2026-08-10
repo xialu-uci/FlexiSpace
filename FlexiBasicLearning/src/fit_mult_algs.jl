@@ -53,18 +53,18 @@ function ig_fit_all_algs(datafile, savedir, make_model; ig = nothing, optimizers
     return result
 end
 
-# function set_up_prob(data, make_model)
-#     # @load datafile data
-#     num_points = size(data)[1]
-#     full = Vector{Bool}(trues(num_points))
-#     my_model = make_model()
-#     my_prob = LearningProblem(
-#         data = data,
-#         model = my_model,
-#         mask = full
-#     )
-#     return my_prob, my_model
-# end
+function set_up_prob(data, make_model)
+    # @load datafile data
+    num_points = size(data)[1]
+    full = Vector{Bool}(trues(num_points))
+    my_model = make_model()
+    my_prob = LearningProblem(
+        data = data,
+        model = my_model,
+        mask = full
+    )
+    return my_prob, my_model
+end
 
 
 
@@ -95,7 +95,7 @@ function ig_make_fitting_figs(result)
     
     y_true  = true_func.(x_grid)
     y_cmaes = fw(x_grid, cmaes_fit_params, my_model)
-    # println("y_cmaes:  $(size(y_cmaes))")
+    #println("y_cmaes:  $(size(y_cmaes))")
     y_gd_list = [fw(x_grid, gd_fit_params, my_model) for gd_fit_params in gd_fit_params_list]
     y_pred_list = vcat([y_cmaes], y_gd_list)
     labels_fits = vcat(["cmaes fit"],["gd fit ($optimizer)" for optimizer in optimizers])
