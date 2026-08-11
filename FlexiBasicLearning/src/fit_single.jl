@@ -8,7 +8,7 @@ using LinearAlgebra
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
 num_points = 20
-expdir  = "../FlexiSpaceLocal/tests/08102025-apple"
+expdir  = "../FlexiSpaceLocal/exp/08112026-apricot"
 datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
@@ -68,7 +68,7 @@ make_model = FlexiBasicLearning.model_makers[func_key](d)
 # Run
 # ------------------------------------------------------------------
 println("Fitting for datafile: $datafile")
-result = FlexiBasicLearning.fit_all_algs(datafile, savedir, make_model, save_parameters = true)
+result = FlexiBasicLearning.fit_all_algs(datafile, savedir, make_model; optimizers = [:gradient_descent, :bfgs, :adam], save_parameters = true)
 println("Finished fitting for datafile: $datafile")
 
 # uncomment for local testing
