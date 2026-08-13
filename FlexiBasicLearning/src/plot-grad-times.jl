@@ -133,6 +133,7 @@ function plot_3d_dof_obs_time(df; outdir)
     return outfile
 end
 
+
 # ------------------------------------------------------------------
 # 4. grad time vs num_dofs, overlaid by func form, fixed num_points
 # ------------------------------------------------------------------
@@ -144,7 +145,7 @@ function plot_time_vs_dof_by_func(df, shape; num_points_fixed, outdir)
     end
     funcs_here = sort(unique(sub.func_form))
     colors = color_for(funcs_here)
-
+ 
     fig = Figure(size = (700, 500))
     ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = METRIC_LABEL,
               title = "$shape: grad time vs dof by func form (num_points=$num_points_fixed)")
@@ -153,9 +154,132 @@ function plot_time_vs_dof_by_func(df, shape; num_points_fixed, outdir)
         scatterlines!(ax, fsub.dof, getproperty(fsub, METRIC); label = f, color = colors[f])
     end
     axislegend(ax, position = :lt)
-
+ 
     mkpath(outdir)
     outfile = joinpath(outdir, "grad_time_vs_dof_by_func_np$(num_points_fixed).png")
+    save(outfile, fig)
+    return outfile
+end
+ 
+
+const NGRADCALLS_LABEL = "Number of gradient calls"
+
+# ------------------------------------------------------------------
+# 1b. n_grad_calls vs num_dofs, overlaid by shape, fixed num_points
+# ------------------------------------------------------------------
+function plot_ngradcalls_vs_dof_by_shape(df, func_form; num_points_fixed, outdir)
+    sub = filter(r -> r.func_form == func_form && r.num_points == num_points_fixed, df)
+    if isempty(sub)
+        @warn "No data" func_form num_points_fixed
+        return nothing
+    end
+    shapes_here = sort(unique(sub.shape))
+    colors = color_for(shapes_here)
+
+    fig = Figure(size = (700, 500))
+    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = NGRADCALLS_LABEL,
+              title = "$func_form: num_grad_calls vs dof (num_points=$num_points_fixed)")
+    for s in shapes_here
+        ssub = sort(filter(r -> r.shape == s, sub), :dof)
+        scatterlines!(ax, ssub.dof, ssub.n_grad_calls; label = s, color = colors[s])
+    end
+    axislegend(ax, position = :lt)
+
+    mkpath(outdir)
+    outfile = joinpath(outdir, "ngradcalls_vs_dof_by_shape_np$(num_points_fixed).png")
+    save(outfile, fig)
+    return outfile
+end
+
+# ------------------------------------------------------------------
+# 2b. n_grad_calls vs num_points, overlaid by shape, fixed num_dofs
+# ------------------------------------------------------------------
+function plot_ngradcalls_vs_obs_by_shape(df, func_form; dof_fixed, outdir)
+    sub = filter(r -> r.func_form == func_form && r.dof == dof_fixed, df)
+    if isempty(sub)
+        @warn "No data" func_form dof_fixed
+        return nothing
+    end
+    shapes_here = sort(unique(sub.shape))
+    colors = color_for(shapes_here)
+
+    fig = Figure(size = (700, 500))
+    ax = Axis(fig[1, 1], xlabel = "Number of observed points", ylabel = NGRADCALLS_LABEL,
+              title = "$func_form: num_grad_calls vs num_points (dof=$dof_fixed)")
+    for s in shapes_here
+        ssub = sort(filter(r -> r.shape == s, sub), :num_points)
+        scatterlines!(ax, ssub.num_points, ssub.n_grad_calls; label = s, color = colors[s])
+    end
+    axislegend(ax, position = :lt)
+
+    mkpath(outdir)
+    outfile = joinpath(outdir, "ngradcalls_vs_obs_by_shape_dof$(dof_fixed).png")
+    save(outfile, fig)
+    return outfile
+end
+
+# ------------------------------------------------------------------
+# 4b. n_grad_calls vs num_dofs, overlaid by func form, fixed num_points
+# ------------------------------------------------------------------
+function plot_ngradcalls_vs_dof_by_func(df, shape; num_points_fixed, outdir)
+    sub = filter(r -> r.shape == shape && r.num_points == num_points_fixed, df)
+    if isempty(sub)
+        @warn "No data" shape num_points_fixed
+        return nothing
+    end
+    funcs_here = sort(unique(sub.func_form))
+    colors = color_for(funcs_here)
+
+    fig = Figure(size = (700, 500))
+    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = NGRADCALLS_LABEL,
+              title = "$shape: num_grad_calls vs dof by func form (num_points=$num_points_fixed)")
+    for f in funcs_here
+        fsub = sort(filter(r -> r.func_form == f, sub), :dof)
+        scatterlines!(ax, fsub.dof, fsub.n_grad_calls; label = f, color = colors[f])
+    end
+    axislegend(ax, position = :lt)
+
+    mkpath(outdir)
+    outfile = joinpath(outdir, "ngradcalls_vs_dof_by_func_np$(num_points_fixed).png")
+    save(outfile, fig)
+    return outfile
+end
+
+# ------------------------------------------------------------------
+# 3b. combined 3D plot: dof (x), num_points (y), n_grad_calls (z)
+# ------------------------------------------------------------------
+function plot_3d_dof_obs_ngradcalls(df; outdir)
+    shapes_here = sort(unique(df.shape))
+    funcs_here = sort(unique(df.func_form))
+    colors = color_for(shapes_here)
+    markers = marker_for(funcs_here)
+
+    fig = Figure(size = (850, 700))
+    ax = Axis3(fig[1, 1], xlabel = "Number of DOFs", ylabel = "Number of obs points",
+               zlabel = NGRADCALLS_LABEL, title = "Num grad calls vs dof & num_points")
+
+    legend_elems = Any[]
+    legend_labels = String[]
+    for s in shapes_here
+        push!(legend_elems, MarkerElement(color = colors[s], marker = :circle))
+        push!(legend_labels, "shape: $s")
+    end
+    for f in funcs_here
+        push!(legend_elems, MarkerElement(color = :gray, marker = markers[f]))
+        push!(legend_labels, "func: $f")
+    end
+
+    for s in shapes_here, f in funcs_here
+        sub = filter(r -> r.shape == s && r.func_form == f, df)
+        isempty(sub) && continue
+        scatter!(ax, sub.dof, sub.num_points, sub.n_grad_calls;
+                 color = colors[s], marker = markers[f], markersize = 14)
+    end
+
+    Legend(fig[1, 2], legend_elems, legend_labels)
+
+    mkpath(outdir)
+    outfile = joinpath(outdir, "ngradcalls_3d_dof_obs.png")
     save(outfile, fig)
     return outfile
 end
@@ -163,21 +287,39 @@ end
 # ------------------------------------------------------------------
 # run everything
 # ------------------------------------------------------------------
+# for func_form in unique(df.func_form)
+#     outdir = joinpath(expdir, "by-func", func_form)
+#     f1 = plot_time_vs_dof_by_shape(df, func_form; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
+#     f2 = plot_time_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
+#     f1 !== nothing && println("Saved $f1")
+#     f2 !== nothing && println("Saved $f2")
+# end
+
+# f3 = plot_3d_dof_obs_time(df; outdir = joinpath(expdir, "combined"))
+# f3 !== nothing && println("Saved $f3")
+
+# for shape in unique(df.shape)
+#     outdir = joinpath(expdir, "by-shape", shape)
+#     f4 = plot_time_vs_dof_by_func(df, shape; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
+#     f4 !== nothing && println("Saved $f4")
+# end
+
+
 for func_form in unique(df.func_form)
     outdir = joinpath(expdir, "by-func", func_form)
-    f1 = plot_time_vs_dof_by_shape(df, func_form; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
-    f2 = plot_time_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
-    f1 !== nothing && println("Saved $f1")
-    f2 !== nothing && println("Saved $f2")
+    f1b = plot_ngradcalls_vs_dof_by_shape(df, func_form; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
+    f2b = plot_ngradcalls_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
+    f1b !== nothing && println("Saved $f1b")
+    f2b !== nothing && println("Saved $f2b")
 end
 
-f3 = plot_3d_dof_obs_time(df; outdir = joinpath(expdir, "combined"))
-f3 !== nothing && println("Saved $f3")
+f3b = plot_3d_dof_obs_ngradcalls(df; outdir = joinpath(expdir, "combined"))
+f3b !== nothing && println("Saved $f3b")
 
 for shape in unique(df.shape)
     outdir = joinpath(expdir, "by-shape", shape)
-    f4 = plot_time_vs_dof_by_func(df, shape; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
-    f4 !== nothing && println("Saved $f4")
+    f4b = plot_ngradcalls_vs_dof_by_func(df, shape; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
+    f4b !== nothing && println("Saved $f4b")
 end
 
 println("Done.")
