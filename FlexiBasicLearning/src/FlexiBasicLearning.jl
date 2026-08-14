@@ -59,6 +59,7 @@ include("sim_data.jl") # use naming functions in other files
 include("loss_slicing.jl") # for looking at loss vs. params and other stuff.
 include("gd_tracking.jl") # for looking at where gd goes
 
+
 # for my for loops
 const func_info = Dict(
     "flexi1"      => (FlexiBasicLearning.make_flexi1_func,      "y = f(t)"),
@@ -78,7 +79,6 @@ const model_makers = Dict(
     "flexi1_alg1" => d -> () -> FlexiBasicLearning.make_ModelFlexiAlg(;flexi_dofs=d),  # same structure for now
     "flexi1_ode1" => d -> () -> FlexiBasicLearning.make_ModelFlexiODE(;flexi_dofs=d),
 )
-
 
 
 end # module FlexiBasicLearning

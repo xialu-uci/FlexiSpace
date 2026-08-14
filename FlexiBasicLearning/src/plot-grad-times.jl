@@ -118,11 +118,13 @@ end
 # ------------------------------------------------------------------
 # run everything
 # ------------------------------------------------------------------
+# dfs = 
 y_metrics = [:mean_grad_time, :median_grad_time, :n_grad_calls]
 metric_labels = ["mean grad compute (s)", "median grad compute (s)", "number of grad calls in 10 iters"]
 x_nums = [:dof, :num_points]
 fixed_nums = [:num_points, :dof]
 
+# for df in dfs
 for (y_metric, metric_label) in zip(y_metrics, metric_labels)
 
     for func_form in unique(df.func_form)
@@ -163,5 +165,5 @@ end
 #     f4b = plot_ngradcalls_vs_dof_by_func(df, shape; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
 #     f4b !== nothing && println("Saved $f4b")
 # end
-
+# end
 println("Done.")

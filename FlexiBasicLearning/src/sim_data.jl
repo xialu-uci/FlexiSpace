@@ -161,17 +161,17 @@ end
 # shapes = [crooked_flexi, cu_flexi, cd_flexi]
 # funcs = [make_flexi1_func, make_flexi1_alg1_func]
 # num_points = 20
-num_points = [2, 4, 8, 16, 32, 64, 128, 254, 512]
-# dofs = [2, 4, 8, 16, 32, 64, 128, 254]
-dofs = [4]
-keys = ["crooked", "cu", "cd"]
-# # funcs = [make_flexi1_ode1_func]
-funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
+# num_points = [2, 4, 8, 16, 32, 64, 128, 254, 512]
+# # dofs = [2, 4, 8, 16, 32, 64, 128, 254]
+# dofs = [4]
+# keys = ["crooked", "cu", "cd"]
+# # # funcs = [make_flexi1_ode1_func]
+# funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
-for n in num_points, f in funcs, d in dofs, sname in keys
-    fname = func_name(f)
-    s        = FlexiBasicLearning.shapes[sname]
-    save_name = joinpath("w_true_params/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
-    sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
-end
+# for n in num_points, f in funcs, d in dofs, sname in keys
+#     fname = func_name(f)
+#     s        = FlexiBasicLearning.shapes[sname]
+#     save_name = joinpath("w_true_params/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+#     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+# end
 
