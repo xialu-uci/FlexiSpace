@@ -1,101 +1,83 @@
-
-# Loads the results table produced by timing_grads.jl and makes:
-#   1. grad time vs num_dofs, overlaid by shape, fixed num_points   -> by-func/<func>/
-#   2. grad time vs num_points, overlaid by shape, fixed num_dofs   -> by-func/<func>/
-#   3. one combined 3D plot: dof (x), num_points (y), grad time (z),
-#      colored by shape, marker by func form                        -> combined/
-#   4. grad time vs num_dofs, overlaid by func form, fixed num_points -> by-shape/<shape>/
-
 using JLD2
 using DataFrames
 using CairoMakie
 using Statistics
 
 # expdir = "../FlexiSpaceLocal/exp/08032026/"
-expdir = "../FlexiSpaceLocal/exp/08052026/added-grad-comp-counter"
+expdir = "../FlexiSpaceLocal/exp/08132026/fixed-gts"
 df = JLD2.load(joinpath(expdir, "grad_time_results.jld2"), "df")
 
-# --- config -----------------------------------------------------------
-# NOTE: the old sweep fixed num_points = 20 for the dof-sweep plots.
-# 20 is not in the new num_points_list ([3, 5, 10, 50, 100]), so pick
-# a stand-in fixed value here -- change as needed.
-const FIXED_NUM_POINTS = 32
-const FIXED_DOF = 32
-const METRIC = :mean_grad_time   # or :median_grad_time / :total_grad_time
+
+# const FIXED_NUM_POINTS = 32 # fix num_points for grad_time vs. num_dofs
+# const FIXED_DOF = 32 # fix num_dofs for grad_time vs num_points
+const NUM_FIXED = 32
+const METRIC = :mean_grad_time   # TODO: potentially plot :median_grad_time or maximum(:grad_time)
 const METRIC_LABEL = "Mean gradient compute time (s)"
 
-# --- helpers for consistent color/marker assignment --------------------
-function color_for(labels)
+function color_for(labels) # coloring
     uniq = sort(unique(labels))
     palette = Makie.wong_colors()
     return Dict(u => palette[mod1(i, length(palette))] for (i, u) in enumerate(uniq))
 end
 
-function marker_for(labels)
+function marker_for(labels) # markers
     uniq = sort(unique(labels))
     markers = [:circle, :utriangle, :rect, :diamond, :star5, :cross, :xcross]
     return Dict(u => markers[mod1(i, length(markers))] for (i, u) in enumerate(uniq))
 end
 
-# ------------------------------------------------------------------
-# 1. grad time vs num_dofs, overlaid by shape, fixed num_points
-# ------------------------------------------------------------------
-function plot_time_vs_dof_by_shape(df, func_form; num_points_fixed, outdir)
-    sub = filter(r -> r.func_form == func_form && r.num_points == num_points_fixed, df)
+
+# plot metric vs. num_(), overlaid by shape
+function plot_metric_vs_num_by_shape(df, func_form, fixed_num, x_num, y_metric, metric_label; num_fixed, outdir)
+    sub = filter(r -> r.func_form == func_form && getproperty(r, fixed_num) == num_fixed, df) # only consider rows with specific func_form and fixed (either num_points or num_dofs)
     if isempty(sub)
-        @warn "No data" func_form num_points_fixed
+        @warn "No data" func_form fixed_num
         return nothing
     end
-    shapes_here = sort(unique(sub.shape))
+    shapes_here = sort(unique(sub.shape)) # should get 3 shapes
     colors = color_for(shapes_here)
 
     fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = METRIC_LABEL,
-              title = "$func_form: grad time vs dof (num_points=$num_points_fixed)")
+    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = metric_label,
+              title = "$func_form: $y_metric vs $x_num ($fixed_num=$num_fixed)")
     for s in shapes_here
-        ssub = sort(filter(r -> r.shape == s, sub), :dof)
-        scatterlines!(ax, ssub.dof, getproperty(ssub, METRIC); label = s, color = colors[s])
+        ssub = sort(filter(r -> r.shape == s, sub), :dof) # only consider shape == s
+        scatterlines!(ax, getproperty(ssub, x_num), getproperty(ssub, y_metric); label = s, color = colors[s]) # x-axis = n_dof or num_points, y-axis = metric
     end
     axislegend(ax, position = :lt)
 
     mkpath(outdir)
-    outfile = joinpath(outdir, "grad_time_vs_dof_by_shape_np$(num_points_fixed).png")
+    outfile = joinpath(outdir, "$(y_metric)_vs_$(x_num)_by_shape_$(fixed_num)$(num_fixed).png")
     save(outfile, fig)
     return outfile
 end
 
-# ------------------------------------------------------------------
-# 2. grad time vs num_points, overlaid by shape, fixed num_dofs
-# ------------------------------------------------------------------
-function plot_time_vs_obs_by_shape(df, func_form; dof_fixed, outdir)
-    sub = filter(r -> r.func_form == func_form && r.dof == dof_fixed, df)
+function plot_metric_vs_num_by_func(df, shape, fixed_num, x_num, y_metric, metric_label; num_fixed, outdir)
+    sub = filter(r -> r.shape == shape && getproperty(r, fixed_num) == num_fixed, df)
     if isempty(sub)
-        @warn "No data" func_form dof_fixed
+        @warn "No data" shape fixed_num
         return nothing
     end
-    shapes_here = sort(unique(sub.shape))
-    colors = color_for(shapes_here)
+    funcs_here = sort(unique(sub.func_form))
+    colors = color_for(funcs_here)
 
     fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of observed points", ylabel = METRIC_LABEL,
-              title = "$func_form: grad time vs num_points (dof=$dof_fixed)")
-    for s in shapes_here
-        ssub = sort(filter(r -> r.shape == s, sub), :num_points)
-        scatterlines!(ax, ssub.num_points, getproperty(ssub, METRIC); label = s, color = colors[s])
+    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = metric_label,
+              title = "$shape: $y_metric vs $x_num ($fixed_num=$num_fixed)")
+    for f in funcs_here
+        fsub = sort(filter(r -> r.func_form == f, sub), :dof)
+        scatterlines!(ax, getproperty(fsub, x_num), getproperty(fsub, y_metric); label = f, color = colors[f])
     end
     axislegend(ax, position = :lt)
 
     mkpath(outdir)
-    outfile = joinpath(outdir, "grad_time_vs_obs_by_shape_dof$(dof_fixed).png")
+    outfile = joinpath(outdir, "$(y_metric)_vs_$(x_num)_by_func_$(fixed_num)$(num_fixed).png")
     save(outfile, fig)
     return outfile
 end
 
-# ------------------------------------------------------------------
-# 3. combined 3D plot: dof (x), num_points (y), grad time (z)
-#    color = shape, marker = func form
-# ------------------------------------------------------------------
-function plot_3d_dof_obs_time(df; outdir)
+
+function plot_3d_dof_obs_metric(df, metric, metric_label; outdir)
     shapes_here = sort(unique(df.shape))
     funcs_here = sort(unique(df.func_form))
     colors = color_for(shapes_here)
@@ -103,7 +85,7 @@ function plot_3d_dof_obs_time(df; outdir)
 
     fig = Figure(size = (850, 700))
     ax = Axis3(fig[1, 1], xlabel = "Number of DOFs", ylabel = "Number of obs points",
-               zlabel = METRIC_LABEL, title = "Grad compute time vs dof & num_points")
+               zlabel = metric_label, title = "$metric_label vs dof & num_points")
 
     # dummy legend entries: one per shape (color) and one per func (marker),
     # since Axis3 doesn't auto-merge legends from `label=` on scatter! well.
@@ -121,165 +103,14 @@ function plot_3d_dof_obs_time(df; outdir)
     for s in shapes_here, f in funcs_here
         sub = filter(r -> r.shape == s && r.func_form == f, df)
         isempty(sub) && continue
-        scatter!(ax, sub.dof, sub.num_points, getproperty(sub, METRIC);
+        scatter!(ax, sub.dof, sub.num_points, getproperty(sub, metric);
                  color = colors[s], marker = markers[f], markersize = 14)
     end
 
     Legend(fig[1, 2], legend_elems, legend_labels)
 
     mkpath(outdir)
-    outfile = joinpath(outdir, "grad_time_3d_dof_obs.png")
-    save(outfile, fig)
-    return outfile
-end
-
-
-# ------------------------------------------------------------------
-# 4. grad time vs num_dofs, overlaid by func form, fixed num_points
-# ------------------------------------------------------------------
-function plot_time_vs_dof_by_func(df, shape; num_points_fixed, outdir)
-    sub = filter(r -> r.shape == shape && r.num_points == num_points_fixed, df)
-    if isempty(sub)
-        @warn "No data" shape num_points_fixed
-        return nothing
-    end
-    funcs_here = sort(unique(sub.func_form))
-    colors = color_for(funcs_here)
- 
-    fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = METRIC_LABEL,
-              title = "$shape: grad time vs dof by func form (num_points=$num_points_fixed)")
-    for f in funcs_here
-        fsub = sort(filter(r -> r.func_form == f, sub), :dof)
-        scatterlines!(ax, fsub.dof, getproperty(fsub, METRIC); label = f, color = colors[f])
-    end
-    axislegend(ax, position = :lt)
- 
-    mkpath(outdir)
-    outfile = joinpath(outdir, "grad_time_vs_dof_by_func_np$(num_points_fixed).png")
-    save(outfile, fig)
-    return outfile
-end
- 
-
-const NGRADCALLS_LABEL = "Number of gradient calls"
-
-# ------------------------------------------------------------------
-# 1b. n_grad_calls vs num_dofs, overlaid by shape, fixed num_points
-# ------------------------------------------------------------------
-function plot_ngradcalls_vs_dof_by_shape(df, func_form; num_points_fixed, outdir)
-    sub = filter(r -> r.func_form == func_form && r.num_points == num_points_fixed, df)
-    if isempty(sub)
-        @warn "No data" func_form num_points_fixed
-        return nothing
-    end
-    shapes_here = sort(unique(sub.shape))
-    colors = color_for(shapes_here)
-
-    fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = NGRADCALLS_LABEL,
-              title = "$func_form: num_grad_calls vs dof (num_points=$num_points_fixed)")
-    for s in shapes_here
-        ssub = sort(filter(r -> r.shape == s, sub), :dof)
-        scatterlines!(ax, ssub.dof, ssub.n_grad_calls; label = s, color = colors[s])
-    end
-    axislegend(ax, position = :lt)
-
-    mkpath(outdir)
-    outfile = joinpath(outdir, "ngradcalls_vs_dof_by_shape_np$(num_points_fixed).png")
-    save(outfile, fig)
-    return outfile
-end
-
-# ------------------------------------------------------------------
-# 2b. n_grad_calls vs num_points, overlaid by shape, fixed num_dofs
-# ------------------------------------------------------------------
-function plot_ngradcalls_vs_obs_by_shape(df, func_form; dof_fixed, outdir)
-    sub = filter(r -> r.func_form == func_form && r.dof == dof_fixed, df)
-    if isempty(sub)
-        @warn "No data" func_form dof_fixed
-        return nothing
-    end
-    shapes_here = sort(unique(sub.shape))
-    colors = color_for(shapes_here)
-
-    fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of observed points", ylabel = NGRADCALLS_LABEL,
-              title = "$func_form: num_grad_calls vs num_points (dof=$dof_fixed)")
-    for s in shapes_here
-        ssub = sort(filter(r -> r.shape == s, sub), :num_points)
-        scatterlines!(ax, ssub.num_points, ssub.n_grad_calls; label = s, color = colors[s])
-    end
-    axislegend(ax, position = :lt)
-
-    mkpath(outdir)
-    outfile = joinpath(outdir, "ngradcalls_vs_obs_by_shape_dof$(dof_fixed).png")
-    save(outfile, fig)
-    return outfile
-end
-
-# ------------------------------------------------------------------
-# 4b. n_grad_calls vs num_dofs, overlaid by func form, fixed num_points
-# ------------------------------------------------------------------
-function plot_ngradcalls_vs_dof_by_func(df, shape; num_points_fixed, outdir)
-    sub = filter(r -> r.shape == shape && r.num_points == num_points_fixed, df)
-    if isempty(sub)
-        @warn "No data" shape num_points_fixed
-        return nothing
-    end
-    funcs_here = sort(unique(sub.func_form))
-    colors = color_for(funcs_here)
-
-    fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = NGRADCALLS_LABEL,
-              title = "$shape: num_grad_calls vs dof by func form (num_points=$num_points_fixed)")
-    for f in funcs_here
-        fsub = sort(filter(r -> r.func_form == f, sub), :dof)
-        scatterlines!(ax, fsub.dof, fsub.n_grad_calls; label = f, color = colors[f])
-    end
-    axislegend(ax, position = :lt)
-
-    mkpath(outdir)
-    outfile = joinpath(outdir, "ngradcalls_vs_dof_by_func_np$(num_points_fixed).png")
-    save(outfile, fig)
-    return outfile
-end
-
-# ------------------------------------------------------------------
-# 3b. combined 3D plot: dof (x), num_points (y), n_grad_calls (z)
-# ------------------------------------------------------------------
-function plot_3d_dof_obs_ngradcalls(df; outdir)
-    shapes_here = sort(unique(df.shape))
-    funcs_here = sort(unique(df.func_form))
-    colors = color_for(shapes_here)
-    markers = marker_for(funcs_here)
-
-    fig = Figure(size = (850, 700))
-    ax = Axis3(fig[1, 1], xlabel = "Number of DOFs", ylabel = "Number of obs points",
-               zlabel = NGRADCALLS_LABEL, title = "Num grad calls vs dof & num_points")
-
-    legend_elems = Any[]
-    legend_labels = String[]
-    for s in shapes_here
-        push!(legend_elems, MarkerElement(color = colors[s], marker = :circle))
-        push!(legend_labels, "shape: $s")
-    end
-    for f in funcs_here
-        push!(legend_elems, MarkerElement(color = :gray, marker = markers[f]))
-        push!(legend_labels, "func: $f")
-    end
-
-    for s in shapes_here, f in funcs_here
-        sub = filter(r -> r.shape == s && r.func_form == f, df)
-        isempty(sub) && continue
-        scatter!(ax, sub.dof, sub.num_points, sub.n_grad_calls;
-                 color = colors[s], marker = markers[f], markersize = 14)
-    end
-
-    Legend(fig[1, 2], legend_elems, legend_labels)
-
-    mkpath(outdir)
-    outfile = joinpath(outdir, "ngradcalls_3d_dof_obs.png")
+    outfile = joinpath(outdir, "$(metric)_3d_dof_obs.png")
     save(outfile, fig)
     return outfile
 end
@@ -287,39 +118,50 @@ end
 # ------------------------------------------------------------------
 # run everything
 # ------------------------------------------------------------------
+y_metrics = [:mean_grad_time, :median_grad_time, :n_grad_calls]
+metric_labels = ["mean grad compute (s)", "median grad compute (s)", "number of grad calls in 10 iters"]
+x_nums = [:dof, :num_points]
+fixed_nums = [:num_points, :dof]
+
+for (y_metric, metric_label) in zip(y_metrics, metric_labels)
+
+    for func_form in unique(df.func_form)
+        outdir = joinpath(expdir, "by-func", func_form)
+        for (fixed_num, x_num) in zip(fixed_nums, x_nums)
+            f1 = plot_metric_vs_num_by_shape(df, func_form, fixed_num, x_num, y_metric, metric_label; num_fixed = NUM_FIXED, outdir)
+        # f2 = plot_time_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
+            f1 !== nothing && println("Saved $f1")
+        end
+        # f2 !== nothing && println("Saved $f2")
+    end
+    f3 = plot_3d_dof_obs_metric(df, y_metric, metric_label; outdir = joinpath(expdir, "combined"))
+    f3 !== nothing && println("Saved $f3")
+
+    for shape in unique(df.shape)
+        outdir = joinpath(expdir, "by-shape", shape)
+        for (fixed_num, x_num) in zip(fixed_nums, x_nums)
+            f4 = plot_metric_vs_num_by_func(df, shape, fixed_num, x_num, y_metric, metric_label; num_fixed = NUM_FIXED, outdir)
+            f4 !== nothing && println("Saved $f4")
+        end
+    end
+
+end
+
 # for func_form in unique(df.func_form)
 #     outdir = joinpath(expdir, "by-func", func_form)
-#     f1 = plot_time_vs_dof_by_shape(df, func_form; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
-#     f2 = plot_time_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
-#     f1 !== nothing && println("Saved $f1")
-#     f2 !== nothing && println("Saved $f2")
+#     f1b = plot_ngradcalls_vs_dof_by_shape(df, func_form; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
+#     f2b = plot_ngradcalls_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
+#     f1b !== nothing && println("Saved $f1b")
+#     f2b !== nothing && println("Saved $f2b")
 # end
 
-# f3 = plot_3d_dof_obs_time(df; outdir = joinpath(expdir, "combined"))
-# f3 !== nothing && println("Saved $f3")
+# f3b = plot_3d_dof_obs_ngradcalls(df; outdir = joinpath(expdir, "combined"))
+# f3b !== nothing && println("Saved $f3b")
 
 # for shape in unique(df.shape)
 #     outdir = joinpath(expdir, "by-shape", shape)
-#     f4 = plot_time_vs_dof_by_func(df, shape; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
-#     f4 !== nothing && println("Saved $f4")
+#     f4b = plot_ngradcalls_vs_dof_by_func(df, shape; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
+#     f4b !== nothing && println("Saved $f4b")
 # end
-
-
-for func_form in unique(df.func_form)
-    outdir = joinpath(expdir, "by-func", func_form)
-    f1b = plot_ngradcalls_vs_dof_by_shape(df, func_form; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
-    f2b = plot_ngradcalls_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
-    f1b !== nothing && println("Saved $f1b")
-    f2b !== nothing && println("Saved $f2b")
-end
-
-f3b = plot_3d_dof_obs_ngradcalls(df; outdir = joinpath(expdir, "combined"))
-f3b !== nothing && println("Saved $f3b")
-
-for shape in unique(df.shape)
-    outdir = joinpath(expdir, "by-shape", shape)
-    f4b = plot_ngradcalls_vs_dof_by_func(df, shape; num_points_fixed = FIXED_NUM_POINTS, outdir = outdir)
-    f4b !== nothing && println("Saved $f4b")
-end
 
 println("Done.")
