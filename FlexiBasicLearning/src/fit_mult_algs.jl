@@ -13,7 +13,7 @@ using Random
     #(2) helper functions to set_up_prob(), fit_cmaes(), fit_gd() to make it easier to call separately.
     #(3) if time_grads = true, skip cmaes and only run gd, since cmaes is not needed for timing grads
 
-function ig_fit_all_algs(datafile, savedir, make_model; ig = nothing, optimizers = [:gradient_descent], maxiters = 10000, save_parameters = false, time_grads = false)
+function ig_fit_all_algs(datafile, savedir, make_model; ig = nothing, optimizers = [:gradient_descent], differ = Zygote.gradient, maxiters = 10000, save_parameters = false, time_grads = false)
     @load datafile data
     
     
@@ -44,7 +44,7 @@ function ig_fit_all_algs(datafile, savedir, make_model; ig = nothing, optimizers
     # gd_time, gd_result = fit_gd(my_prob, ig; optimizers=optimizers, maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
     for optimizer in optimizers
         println("Using optimizer: $optimizer")
-        gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; optimizer=optimizer, maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
+        gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; optimizer=optimizer, differ = differ, maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
         result["gd_$(optimizer)_result"] = gd_result # time in gd_result
     end
     
@@ -185,12 +185,12 @@ end
 
 
 #take igs as a list of initial guesses, and return a list of results for each ig
-function fit_all_algs(datafile, savedir, make_model; igs = [nothing], optimizers = [:gradient_descent], maxiters = 10000, save_parameters = false, time_grads = false)
+function fit_all_algs(datafile, savedir, make_model; igs = [nothing], optimizers = [:gradient_descent], differ = Zygote.gradient, maxiters = 10000, save_parameters = false, time_grads = false)
     results = []
     for (idx, ig) in enumerate(igs)
         println("Fitting with initial guess $idx")
         subdir = joinpath(savedir, "fit_ig$(idx)")
-        result = ig_fit_all_algs(datafile, subdir, make_model; ig = ig, optimizers = optimizers, maxiters = maxiters, save_parameters = save_parameters, time_grads = time_grads)
+        result = ig_fit_all_algs(datafile, subdir, make_model; ig = ig, optimizers = optimizers, differ = differ, maxiters = maxiters, save_parameters = save_parameters, time_grads = time_grads)
         push!(results, result)
     end
    

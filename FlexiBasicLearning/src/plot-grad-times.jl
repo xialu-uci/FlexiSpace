@@ -4,8 +4,8 @@ using CairoMakie
 using Statistics
 
 # expdir = "../FlexiSpaceLocal/exp/08032026/"
-expdir = "../FlexiSpaceLocal/exp/08132026/fixed-gts"
-df = JLD2.load(joinpath(expdir, "grad_time_results.jld2"), "df")
+expdir_base = "../FlexiSpaceLocal/exp/08132026/fixed-gts"
+# df = JLD2.load(joinpath(expdir, "grad_time_results.jld2"), "df")
 
 
 # const FIXED_NUM_POINTS = 32 # fix num_points for grad_time vs. num_dofs
@@ -38,8 +38,8 @@ function plot_metric_vs_num_by_shape(df, func_form, fixed_num, x_num, y_metric, 
     colors = color_for(shapes_here)
 
     fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = metric_label,
-              title = "$func_form: $y_metric vs $x_num ($fixed_num=$num_fixed)")
+    ax = Axis(fig[1, 1], xlabel = "$x_num", ylabel = metric_label,
+              title = "$func_form: $y_metric vs $x_num ($fixed_num=$num_fixed)", xscale = log10, yscale = log10)
     for s in shapes_here
         ssub = sort(filter(r -> r.shape == s, sub), :dof) # only consider shape == s
         scatterlines!(ax, getproperty(ssub, x_num), getproperty(ssub, y_metric); label = s, color = colors[s]) # x-axis = n_dof or num_points, y-axis = metric
@@ -62,8 +62,8 @@ function plot_metric_vs_num_by_func(df, shape, fixed_num, x_num, y_metric, metri
     colors = color_for(funcs_here)
 
     fig = Figure(size = (700, 500))
-    ax = Axis(fig[1, 1], xlabel = "Number of DOFs", ylabel = metric_label,
-              title = "$shape: $y_metric vs $x_num ($fixed_num=$num_fixed)")
+    ax = Axis(fig[1, 1], xlabel = "$x_num", ylabel = metric_label,
+              title = "$shape: $y_metric vs $x_num ($fixed_num=$num_fixed)", xscale = log10, yscale = log10)
     for f in funcs_here
         fsub = sort(filter(r -> r.func_form == f, sub), :dof)
         scatterlines!(ax, getproperty(fsub, x_num), getproperty(fsub, y_metric); label = f, color = colors[f])
@@ -118,35 +118,45 @@ end
 # ------------------------------------------------------------------
 # run everything
 # ------------------------------------------------------------------
-# dfs = 
+
+
+# dfs =
+
+# expdir = ["../FlexiSpaceLocal/exp/08132026/fixed-gts/fd" , "../FlexiSpaceLocal/exp/08132026/fixed-gts/fw", "../FlexiSpaceLocal/exp/08132026/fixed-gts/rv"]
+modes = ["fw", "rv", "fd"]
+
 y_metrics = [:mean_grad_time, :median_grad_time, :n_grad_calls]
 metric_labels = ["mean grad compute (s)", "median grad compute (s)", "number of grad calls in 10 iters"]
 x_nums = [:dof, :num_points]
 fixed_nums = [:num_points, :dof]
 
 # for df in dfs
-for (y_metric, metric_label) in zip(y_metrics, metric_labels)
+for mode in modes
+    expdir = joinpath(expdir_base, mode)
+    df = JLD2.load(joinpath(expdir, "$(mode)_grad_time_results.jld2"), "df")
+    for (y_metric, metric_label) in zip(y_metrics, metric_labels)
 
-    for func_form in unique(df.func_form)
-        outdir = joinpath(expdir, "by-func", func_form)
-        for (fixed_num, x_num) in zip(fixed_nums, x_nums)
-            f1 = plot_metric_vs_num_by_shape(df, func_form, fixed_num, x_num, y_metric, metric_label; num_fixed = NUM_FIXED, outdir)
-        # f2 = plot_time_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
-            f1 !== nothing && println("Saved $f1")
+        for func_form in unique(df.func_form)
+            outdir = joinpath(expdir, "by-func", func_form)
+            for (fixed_num, x_num) in zip(fixed_nums, x_nums)
+                f1 = plot_metric_vs_num_by_shape(df, func_form, fixed_num, x_num, y_metric, metric_label; num_fixed = NUM_FIXED, outdir)
+            # f2 = plot_time_vs_obs_by_shape(df, func_form; dof_fixed = FIXED_DOF, outdir = outdir)
+                f1 !== nothing && println("Saved $f1")
+            end
+            # f2 !== nothing && println("Saved $f2")
         end
-        # f2 !== nothing && println("Saved $f2")
-    end
-    f3 = plot_3d_dof_obs_metric(df, y_metric, metric_label; outdir = joinpath(expdir, "combined"))
-    f3 !== nothing && println("Saved $f3")
+        f3 = plot_3d_dof_obs_metric(df, y_metric, metric_label; outdir = joinpath(expdir, "combined"))
+        f3 !== nothing && println("Saved $f3")
 
-    for shape in unique(df.shape)
-        outdir = joinpath(expdir, "by-shape", shape)
-        for (fixed_num, x_num) in zip(fixed_nums, x_nums)
-            f4 = plot_metric_vs_num_by_func(df, shape, fixed_num, x_num, y_metric, metric_label; num_fixed = NUM_FIXED, outdir)
-            f4 !== nothing && println("Saved $f4")
+        for shape in unique(df.shape)
+            outdir = joinpath(expdir, "by-shape", shape)
+            for (fixed_num, x_num) in zip(fixed_nums, x_nums)
+                f4 = plot_metric_vs_num_by_func(df, shape, fixed_num, x_num, y_metric, metric_label; num_fixed = NUM_FIXED, outdir)
+                f4 !== nothing && println("Saved $f4")
+            end
         end
-    end
 
+    end
 end
 
 # for func_form in unique(df.func_form)

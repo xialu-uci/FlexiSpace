@@ -30,7 +30,7 @@ num_points_list = [2, 4, 8, 16, 32, 64, 128, 254, 512]
 
 skeys = ["crooked", "cu", "cd"]
 
-differs = [Zygote.gradient, ForwardDiff.gradient, FiniteDiff.finite_difference_gradient]
+differs = [:zygote, :forwarddiff, :finitediff]
 diff_name_conv = ["rv", "fw", "fd"]
 #shapes = [FlexiBasicLearning.crooked_flexi, FlexiBasicLearning.cu_flexi, FlexiBasicLearning.cd_flexi]
 funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning.make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func]

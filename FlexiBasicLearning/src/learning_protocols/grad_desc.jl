@@ -6,10 +6,12 @@ using SciMLSensitivity
 using LineSearches
 using Zygote
 using FlexiBasicLearning
+using FiniteDiff
+using ForwardDiff
 
 function gradient_descent_learn(learning_problem, ig; 
     optimizer = :gradient_descent, 
-    differ = Zygote.gradient, # also try ForwardDiff.gradient, FiniteDiff.grad, FiniteDiff.finite_difference_gradient
+    differ = :zygote, # also try ForwardDiff.gradient, FiniteDiff.grad, FiniteDiff.finite_difference_gradient
     learning_rate=0.01, # for adam
     linesearch=nothing, # for gd or bfgs
     maxiters=10000, 
@@ -68,7 +70,8 @@ function gradient_descent_learn(learning_problem, ig;
     gradient_history = config.save_parameters ? [] : nothing
     grad_time_history = config.time_grads ? [] : nothing
     
-    
+    timing_buf = zeros(n)
+
     function callback(p, lossval)
         push!(loss_history, lossval)
         current_iter = length(loss_history)
@@ -84,10 +87,9 @@ function gradient_descent_learn(learning_problem, ig;
         end
 
         if config.time_grads
-            # TODO: retrieve number of times that gradient was evaluated (not here but in the optimization function) and store it in config.num_grad_evals
-            grad_fn!(θ -> flexi_loss(θ, nothing), p.u) # compilation
+            grad_fn!(timing_buf, p.u, nothing)  # warm-up / compilation
             t0 = time_ns()
-            grad_fn!(θ -> flexi_loss(θ, nothing), p.u)
+            grad_fn!(timing_buf, p.u, nothing)
             elapsed = (time_ns() - t0) / 1e9
             push!(grad_time_history, elapsed)
         end

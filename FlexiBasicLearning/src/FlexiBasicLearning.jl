@@ -12,6 +12,8 @@ using Optimisers, Zygote
 using ChainRulesCore # can prob get rid of ChainRulesCore
 using SciMLSensitivity
 using LineSearches
+using FiniteDiff
+using ForwardDiff
 include("FlexiFunctions.jl")
 
 using .FlexiFunctions
@@ -42,6 +44,7 @@ export CallbackConfig, LearningConstants
 include("models/def_flexi_basic.jl")
 include("models/def_flexi_alg.jl")
 include("models/def_flexi_ode.jl")
+include("models/def_flexi_lv.jl")
 
 # include helpers
 include("get_loss.jl")

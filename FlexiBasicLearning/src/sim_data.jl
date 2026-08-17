@@ -111,6 +111,28 @@ function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e
     end
 end
 
+function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8,
+                                x_max = 1e2, for_sim = false, a = 1.0)
+    f = z -> FlexiFunctions.evaluate_decompress(z, params)  # expects arg in [0,1)
+
+    function dydx(y, p, x)
+        y1, y2 = y
+        y1_mod = y1 / (y1 + 1)               
+        dy1 = (y1 + 1) * f(y1_mod) - y1 * y2
+        dy2 = a * y2 * (y1 - 1)
+        return [dy1, dy2]
+    end
+
+    prob = ODEProblem(dydx, [1.0, 2.5], (0.0, x_max))
+    sol = solve(prob, alg; reltol = reltol, abstol = abstol)
+
+    if for_sim
+        return sol.t[end], x -> sol(x)
+    else
+        return x -> sol(x)
+    end
+end
+
 # function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8)
 #     f = y ->  FlexiFunctions.evaluate_decompress(y, params) # dy/dx = f(y)
 #     dydx(y, p, x) = f(y)  # out-of-place form; y and x are scalars here
@@ -141,6 +163,7 @@ function func_name(f)
     f === make_flexi1_func      && return "flexi1"
     f === make_flexi1_alg1_func && return "flexi1alg1"
     f === make_flexi1_ode1_func && return "flexi1ode1"
+    f === make_flexi1_lv_func && return "flexi1lv2"
     error("Unknown func_form: $f")
 end
 
@@ -160,18 +183,20 @@ end
 # dofs = [5, 20, 50]
 # shapes = [crooked_flexi, cu_flexi, cd_flexi]
 # funcs = [make_flexi1_func, make_flexi1_alg1_func]
-# num_points = 20
+num_points = [20]
 # num_points = [2, 4, 8, 16, 32, 64, 128, 254, 512]
 # # dofs = [2, 4, 8, 16, 32, 64, 128, 254]
-# dofs = [4]
-# keys = ["crooked", "cu", "cd"]
-# # # funcs = [make_flexi1_ode1_func]
+dofs = [4]
+keys = ["crooked", "cu", "cd"]
+# # funcs = [make_flexi1_ode1_func]
 # funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
-# for n in num_points, f in funcs, d in dofs, sname in keys
-#     fname = func_name(f)
-#     s        = FlexiBasicLearning.shapes[sname]
-#     save_name = joinpath("w_true_params/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
-#     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
-# end
+funcs = [make_flexi1_lv_func]
+
+for n in num_points, f in funcs, d in dofs, sname in keys
+    fname = func_name(f)
+    s        = FlexiBasicLearning.shapes[sname]
+    save_name = joinpath("w_true_params/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+    sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+end
 
