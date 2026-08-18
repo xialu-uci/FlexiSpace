@@ -32,7 +32,7 @@ abstract type AbstractFlexiBasicModel <: AbstractModel end
     data::Matrix{Float64} # modified to match data structure
     model::M
     mask::Vector{Bool} # modified to match data structure
-    loss_strategy::String = "normalized"
+    loss_strategy::String = "RMSE"
 end
 
 
@@ -68,6 +68,7 @@ const func_info = Dict(
     "flexi1"      => (FlexiBasicLearning.make_flexi1_func,      "y = f(t)"),
     "flexi1_alg1" => (FlexiBasicLearning.make_flexi1_alg1_func, "y = t \u22c5 f(t)"),
     "flexi1_ode1" => (FlexiBasicLearning.make_flexi1_ode1_func, "y' = f(y)"),
+    "flexi1_lv2" => (FlexiBasicLearning.make_flexi1_lv_func, "y1 = (y1+1)f(y1/(y1+1)) -y1 \u22c5 y2, y2 = α \u22c5 y2(y1-1)")
 )
 
 const shapes = Dict(
@@ -81,6 +82,7 @@ const model_makers = Dict(
     "flexi1"      => d -> () -> FlexiBasicLearning.make_ModelFlexi1(;flexi_dofs=d),
     "flexi1_alg1" => d -> () -> FlexiBasicLearning.make_ModelFlexiAlg(;flexi_dofs=d),  # same structure for now
     "flexi1_ode1" => d -> () -> FlexiBasicLearning.make_ModelFlexiODE(;flexi_dofs=d),
+    "flexi1_lv2" => d -> () -> FlexiBasicLearning.make_ModelFlexiLV(;flexi_dofs = d)
 )
 
 

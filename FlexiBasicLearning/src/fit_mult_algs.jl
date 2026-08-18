@@ -67,6 +67,11 @@ function set_up_prob(data, make_model)
 end
 
 
+# normalize any model output to an n×k matrix, k = number of y-components
+as_matrix(y::AbstractMatrix) = y
+as_matrix(y::AbstractVector{<:Real}) = reshape(y, :, 1)               # scalar-output model
+as_matrix(y::AbstractVector{<:AbstractVector}) = stack(y; dims = 1)    # for mult outputs
+
 
 function ig_make_fitting_figs(result)
     
@@ -86,7 +91,7 @@ function ig_make_fitting_figs(result)
     @load datafile func_form
     @load datafile true_params
     x_data = data[:, 1]
-    y_data = data[:, 2]
+    y_data = data[:, 2:end]
     x_grid = collect(LinRange(0.0, maximum(x_data), 500))
     x_grid_flexi = collect(LinRange(0.0, 1.0, 500))
     cmaes_fit_params = cmaes_result.fit_params
@@ -131,23 +136,35 @@ function ig_make_fitting_figs(result)
     return fig1, fig2, fig3
 end
 
-function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list; title = "Fit Comparison", labels = ["cmaes fit", "gd fit"])
-    fig = Figure(size = (800, 500))
-    ax = CairoMakie.Axis(fig[1, 1], xlabel = "t", ylabel = "y", title = title)
-    CairoMakie.lines!(ax, x_grid, y_true,  label = "true", linewidth = 2, color = :black, linestyle = :dash)
+function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
+        title = "Fit Comparison", labels = ["cmaes fit", "gd fit"], y_labels = nothing)
 
-    n = length(y_pred_list)
-    colors = n == 1 ? [:red] : cgrad(:tab10, n, categorical = true)
+    y_true = as_matrix(y_true)
+    y_pred_list = [as_matrix(yp) for yp in y_pred_list]
+    y_data_mat = isempty(y_data) ? nothing : as_matrix(y_data)
 
-    for (y_pred, label, color) in zip(y_pred_list, labels, colors)
-        #println("y_pred:  $(size(y_pred))")
-        #println("x_grid:  $(size(x_grid))")
+    n_outputs = size(y_true, 2)
+    y_labels = isnothing(y_labels) ? ["y$i" for i in 1:n_outputs] : y_labels
 
+    fig = Figure(size = (800, 400 * n_outputs))
+    n_pred = length(y_pred_list)
+    colors = n_pred == 1 ? [:red] : cgrad(:tab10, n_pred, categorical = true)
 
-        CairoMakie.lines!(ax, x_grid, y_pred, label = label, linewidth = 2, color = color)
+    for j in 1:n_outputs
+        ax = CairoMakie.Axis(fig[j, 1], xlabel = "t", ylabel = y_labels[j],
+                              title = j == 1 ? title : "")
+        CairoMakie.lines!(ax, x_grid, y_true[:, j], label = "true",
+                           linewidth = 2, color = :black, linestyle = :dash)
+        for (y_pred, label, color) in zip(y_pred_list, labels, colors)
+            CairoMakie.lines!(ax, x_grid, y_pred[:, j], label = label,
+                               linewidth = 2, color = color)
+        end
+        if !isnothing(y_data_mat)
+            CairoMakie.scatter!(ax, x, y_data_mat[:, j], label = "noisy data",
+                                 markersize = 5, color = (:orange))
+        end
+        axislegend(ax, position = :rb)
     end
-    CairoMakie.scatter!(ax, x, y_data, label = "noisy data", markersize = 5, color = (:orange))
-    axislegend(ax, position = :rb)
     return fig
 end
 

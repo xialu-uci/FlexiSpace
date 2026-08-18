@@ -25,10 +25,11 @@ end
 function make_rhs(model::ModelFlexiLV; gradient_mode = false)
     function rhs(du, u, params, t)
         x, y = u
+        # println(x)
         x_mod = x/(x+1)
         # du .= FlexiFunctions.evaluate_decompress.(u, Ref(params); gradient_mode=gradient_mode)
-        du[1] = (x+1) * Flexi.evaluate_decompress(x_mod, Ref(params); gradient_mode = gradient_mode) - x*y
-        du[2] = a*y*(x-1)
+        du[1] = (x+1) * FlexiFunctions.evaluate_decompress(x_mod, params; gradient_mode = gradient_mode) - x*y
+        du[2] = 2.0*y*(x-1)
 
         return nothing
     end
@@ -44,9 +45,14 @@ function fw(x::AbstractVector, params, model::ModelFlexiLV; gradient_mode = fals
     prob = ODEProblem(rhs, model.u0,tspan, params)
    
     
-    sol = solve(prob, Tsit5();
+    sol = solve(prob, Tsit5();; reltol = 1e-8, abstol = 1e-8,
         saveat = x, 
         sensealg = ReverseDiffAdjoint()) # could reduce tolerance
-    y = vec(Array(sol))   
+
+    if sol.retcode != SciMLBase.ReturnCode.Success
+        return nothing   # signal failure upstream
+    end
+
+    y = permutedims(Array(sol))
     return y
 end

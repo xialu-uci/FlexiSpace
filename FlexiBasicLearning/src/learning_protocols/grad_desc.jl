@@ -29,48 +29,55 @@ function gradient_descent_learn(learning_problem, ig;
        return loss
     end
 
-    grad_eval_count = Ref(0)
+    config = CallbackConfig(;print_frequency = print_frequency, save_parameters = save_parameters, time_grads = time_grads)
 
-    n = length(ig)
-    # build once — outside the loop — so it's non-allocating on every call
-    fd_cache = FiniteDiff.GradientCache(zeros(n), zeros(n))
 
-    # a single unified gradient! function, chosen by `differ`
-    grad_fn! = if differ == :zygote
-        (G, params, p) -> begin
-            g = Zygote.gradient(θ -> flexi_loss(θ, p), params)[1]
-            G .= g
-        end
-        elseif differ == :forwarddiff
+   
+
+    if config.time_grads
+
+        n = length(ig)
+
+        grad_eval_count = Ref(0)
+
+        # build once — outside the loop — so it's non-allocating on every call
+        fd_cache = FiniteDiff.GradientCache(zeros(n), zeros(n))
+
+        # a single unified gradient! function, chosen by `differ`
+        grad_fn! = if differ == :zygote
             (G, params, p) -> begin
-                G .= ForwardDiff.gradient(θ -> flexi_loss(θ, p), params)
+                g = Zygote.gradient(θ -> flexi_loss(θ, p), params)[1]
+                G .= g
             end
-        elseif differ == :finitediff
-            (G, params, p) -> begin
-                FiniteDiff.finite_difference_gradient!(G, θ -> flexi_loss(θ, p), params, fd_cache)
+            elseif differ == :forwarddiff
+                (G, params, p) -> begin
+                    G .= ForwardDiff.gradient(θ -> flexi_loss(θ, p), params)
+                end
+            elseif differ == :finitediff
+                (G, params, p) -> begin
+                    FiniteDiff.finite_difference_gradient!(G, θ -> flexi_loss(θ, p), params, fd_cache)
+                end
+            else
+                error("Unknown differ: $differ")
             end
-        else
-            error("Unknown differ: $differ")
-        end
 
-    function counted_grad!(G, params, p)
-        grad_eval_count[] += 1
-        grad_fn!(G, params, p)
-        return nothing
+        function counted_grad!(G, params, p)
+            grad_eval_count[] += 1
+            grad_fn!(G, params, p)
+            return nothing
+        end
     end
 
-    
 
     loss_history = Float64[]
     # grad_norm_history = Float64[]
     
-    config = CallbackConfig(;print_frequency = print_frequency, save_parameters = save_parameters, time_grads = time_grads)
 
     parameter_history = config.save_parameters ? [] : nothing
     gradient_history = config.save_parameters ? [] : nothing
     grad_time_history = config.time_grads ? [] : nothing
     
-    timing_buf = zeros(n)
+    timing_buf = config.time_grads ? zeros(n) : nothing
 
     function callback(p, lossval)
         push!(loss_history, lossval)

@@ -14,17 +14,20 @@ function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, sh
 
     x_max, true_func = func_form(true_params; for_sim = true)
     # num_points must be in
-   x = LinRange(0.0,x_max, 20)
+    x = LinRange(0.0,x_max, 20)
    
     y = true_func.(x)
+    Y = stack(y, dims =1)
+    # println(y)
     # add noise to y
     # skip noise comp if std = 0.0
     if std == 0.0
-        noise =0.0
+        noise = 0.0
     else
-        noise = randn(num_points).*std # this makes it possible for vals outside [0,1]. Should I clamp?
+        noise = randn(size(Y)).*std # this makes it possible for vals outside [0,1]. Should I clamp?
     end
-    y_noisy = y .+ noise
+    
+    y_noisy = Y .+ noise
     data = [x y_noisy]
     if !isnothing(save_name)
         savedir = "../FlexiSpaceLocal/data"
