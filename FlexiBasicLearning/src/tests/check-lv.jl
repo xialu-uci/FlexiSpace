@@ -11,7 +11,7 @@ using LinearAlgebra
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
 num_points = 20
-expdir  = "../FlexiSpaceLocal/tests/08172026/lv-test-1"
+expdir  = "../FlexiSpaceLocal/tests/08172026/lv-test-tols1e-8"
 datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # ------------------------------------------------------------------
