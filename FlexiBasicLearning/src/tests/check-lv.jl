@@ -5,13 +5,18 @@ using JLD2
 using FlexiBasicLearning
 using CairoMakie
 using LinearAlgebra
+using Random
+Random.seed!(17)
+# set seed
+
+
 
 # just edited remote to have "main" as default branch. Edit to check if push/pulling to intended places.
 # ------------------------------------------------------------------
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
 num_points = 20
-expdir  = "../FlexiSpaceLocal/tests/08172026/lv-test-tols1e-8"
+expdir  = "../FlexiSpaceLocal/tests/08172026/lv-test"
 datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 
 # ------------------------------------------------------------------
@@ -45,6 +50,9 @@ func_key  = "flexi1_lv2"
 d         = 4
 shape_key = "crooked"
 
+# try loss_strats norm and RMSE
+# try reltol = 1e-3 and 1e-8
+
 
 haskey(FlexiBasicLearning.func_info, func_key) || error("Unknown func_key '$func_key'. Options: $(collect(keys(FlexiBasicLearning.func_info)))")
 haskey(FlexiBasicLearning.shapes, shape_key)   || error("Unknown shape_key '$shape_key'. Options: $(collect(keys(FlexiBasicLearning.shapes)))")
@@ -55,25 +63,37 @@ s        = FlexiBasicLearning.shapes[shape_key]
 # ------------------------------------------------------------------
 # Reconstruct paths / model 
 # ------------------------------------------------------------------
+
+loss_strats = ["RMSE", "normalized"]
+reltols = [1e-3, 1e-8]
 fname = FlexiBasicLearning.func_name(f)
 sname = FlexiBasicLearning.shape_name(s)
 
-subfolder = "$(fname)-$(d)dof-$(num_points)obs"
-savedir   = joinpath(expdir, subfolder, sname)
-datafile  = joinpath(datadir, subfolder, "sim_data_$(sname).jld2")
+datafile  = joinpath(datadir, "$(fname)-$(d)dof-$(num_points)obs", "sim_data_$(sname).jld2")
 
-make_model = FlexiBasicLearning.model_makers[func_key](d)
+for strat in loss_strats
+    for tol in reltols
 
-# ------------------------------------------------------------------
-# Run
-# ------------------------------------------------------------------
-println("Fitting for datafile: $datafile")
-results = FlexiBasicLearning.fit_all_algs(datafile, savedir, make_model; optimizers = [:gradient_descent, :bfgs, :adam], save_parameters = true)
-println("Finished fitting for datafile: $datafile")
 
-# # uncomment for local testing
-FlexiBasicLearning.make_fitting_figs(results)
-FlexiBasicLearning.end_to_end_gd_tracking(results; func_form = f, func_string = f_str)
+    subfolder = "$strat/$(fname)-$(d)dof-$(num_points)obs-tol$tol"
+    savedir   = joinpath(expdir, subfolder, sname)
+    
+
+    make_model = FlexiBasicLearning.model_makers[func_key](d, tol)
+
+    # ------------------------------------------------------------------
+    # Run
+    # ------------------------------------------------------------------
+    println("Fitting for datafile: $datafile")
+    results = FlexiBasicLearning.fit_all_algs(datafile, savedir, make_model; 
+        optimizers = [:gradient_descent, :bfgs, :adam], save_parameters = true, loss_strategy = strat)
+    println("Finished fitting for datafile: $datafile")
+
+    # # uncomment for local testing
+    FlexiBasicLearning.make_fitting_figs(results)
+    FlexiBasicLearning.end_to_end_gd_tracking(results; func_form = f, func_string = f_str)
+    end
+end
 
 # for 1 model types (try difficult ones): 
     # do bfgs, gd, adam, cmaes. (save_parmameters = true)

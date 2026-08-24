@@ -3,10 +3,12 @@ struct ModelFlexiLV <: AbstractFlexiBasicModel
     # params::ComponentArray{Float64}'
     params::AbstractVector{Float64}
     u0::AbstractVector{Float64}
+    reltol::Float64
+    abstol::Float64
     
 end
 
-function make_ModelFlexiLV(;flexi_dofs=5)
+function make_ModelFlexiLV(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8)
    
  
     
@@ -17,7 +19,9 @@ function make_ModelFlexiLV(;flexi_dofs=5)
 
     return ModelFlexiLV(
        params,
-       u0)
+       u0,
+       reltol,
+       abstol)
 
 end
 
@@ -45,7 +49,7 @@ function fw(x::AbstractVector, params, model::ModelFlexiLV; gradient_mode = fals
     prob = ODEProblem(rhs, model.u0,tspan, params)
    
     
-    sol = solve(prob, Tsit5(); reltol = 1e-8, abstol = 1e-8,
+    sol = solve(prob, Tsit5(); reltol = model.reltol, abstol = model.abstol,
         saveat = x, 
         sensealg = ReverseDiffAdjoint()) # could reduce tolerance
 
