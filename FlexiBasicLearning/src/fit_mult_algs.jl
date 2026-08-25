@@ -144,7 +144,7 @@ function ig_make_fitting_figs(result)
 end
 
 function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
-        title = "Fit Comparison", labels = ["cmaes fit", "gd fit"], y_labels = nothing)
+        title = "Fit Comparison", labels = ["cmaes fit", "gd fit"], xlabel = "t", y_labels = nothing, flexi_args = nothing)
 
     y_true = as_matrix(y_true)
     y_pred_list = [as_matrix(yp) for yp in y_pred_list]
@@ -158,20 +158,30 @@ function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
     colors = n_pred == 1 ? [:red] : cgrad(:tab10, n_pred, categorical = true)
 
     for j in 1:n_outputs
-        ax = CairoMakie.Axis(fig[j, 1], xlabel = "t", ylabel = y_labels[j],
+        ax = CairoMakie.Axis(fig[j, 1], xlabel = xlabel, ylabel = y_labels[j],
                               title = j == 1 ? title : "")
         CairoMakie.lines!(ax, x_grid, y_true[:, j], label = "true",
                            linewidth = 2, color = :black, linestyle = :dash)
+
         for (y_pred, label, color) in zip(y_pred_list, labels, colors)
             CairoMakie.lines!(ax, x_grid, y_pred[:, j], label = label,
                                linewidth = 2, color = color)
         end
+
         if !isnothing(y_data_mat)
             CairoMakie.scatter!(ax, x, y_data_mat[:, j], label = "noisy data",
                                  markersize = 5, color = (:orange))
         end
+
+        # dashed vertical lines at each flexi arg location
+        if !isnothing(flexi_args)
+            CairoMakie.vlines!(ax, flexi_args, label = "flexi arg spacing",
+                                linestyle = :dash, color = (:gray, 0.6))
+        end
+
         axislegend(ax, position = :rb)
     end
+
     return fig
 end
 
