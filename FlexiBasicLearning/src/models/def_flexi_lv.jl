@@ -31,9 +31,10 @@ function make_rhs(model::ModelFlexiLV; gradient_mode = false)
         x, y = u
         # println(x)
         x_mod = x/(x+1)
+        a = 1.0
         # du .= FlexiFunctions.evaluate_decompress.(u, Ref(params); gradient_mode=gradient_mode)
         du[1] = (x+1) * FlexiFunctions.evaluate_decompress(x_mod, params; gradient_mode = gradient_mode) - x*y
-        du[2] = 2.0*y*(x-1)
+        du[2] = -a*y* + x*y
 
         return nothing
     end
