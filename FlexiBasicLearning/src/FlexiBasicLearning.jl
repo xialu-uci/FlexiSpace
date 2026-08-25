@@ -32,7 +32,7 @@ abstract type AbstractFlexiBasicModel <: AbstractModel end
     data::Matrix{Float64} # modified to match data structure
     model::M
     mask::Vector{Bool} # modified to match data structure
-    loss_strategy::String = "RMSE"
+    loss_strategy::String = "normalized"
 end
 
 

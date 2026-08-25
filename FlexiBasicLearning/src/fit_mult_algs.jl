@@ -97,6 +97,10 @@ function ig_make_fitting_figs(result)
     @load datafile data
     @load datafile func_form
     @load datafile true_params
+    @load datafile flexi_args
+
+    labels = FlexiBasicLearning.func_form_labels(func_form)   # <-- new
+
     x_data = data[:, 1]
     y_data = data[:, 2:end]
     x_grid = collect(LinRange(0.0, maximum(x_data), 500))
@@ -104,25 +108,26 @@ function ig_make_fitting_figs(result)
     cmaes_fit_params = cmaes_result.fit_params
     gd_fit_params_list = [gd_result.fit_params for gd_result in gd_results]
     true_func = func_form(true_params)
-    
+
     y_true  = true_func.(x_grid)
     y_cmaes = fw(x_grid, cmaes_fit_params, my_model)
-    #println("y_cmaes:  $(size(y_cmaes))")
     y_gd_list = [fw(x_grid, gd_fit_params, my_model) for gd_fit_params in gd_fit_params_list]
     y_pred_list = vcat([y_cmaes], y_gd_list)
     labels_fits = vcat(["cmaes fit"],["gd fit ($optimizer)" for optimizer in optimizers])
 
-    fig1 = make_fit_overlay_fig(x_data, y_data, x_grid, y_true, y_pred_list; title = "Fit Comparison", labels = labels_fits)
+    fig1 = make_fit_overlay_fig(x_data, y_data, x_grid, y_true, y_pred_list;
+            title = labels.title, xlabel = labels.xlabel,
+            y_labels = labels.y_labels, labels = labels_fits)
 
-    # for flexifunction only overlay
+    # flexifunction-only overlay
     flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params))
     flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params))
     flexi_gd_list = [FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params)) for gd_fit_params in gd_fit_params_list]
-    flexi_pred_list = vcat([flexi_cmaes],flexi_gd_list)
+    flexi_pred_list = vcat([flexi_cmaes], flexi_gd_list)
     labels_flexi = vcat(["cmaes flexi"], ["gd flexi ($optimizer)" for optimizer in optimizers])
-    fig2 = make_fit_overlay_fig([0.0], [0.0], x_grid_flexi, flexi_true, flexi_pred_list; title = "Flexifunction only comparison", labels = labels_flexi) # don't plot datapoints
 
-
+    fig2 = make_fit_overlay_fig([0.0], [0.0], x_grid_flexi, flexi_true, flexi_pred_list;
+            title = labels.flexi_title, labels = labels_flexi, flexi_args = flexi_args)
     # for loss history
     cmaes_loss_history = cmaes_result.loss_history
     cmaes_time = cmaes_result.time
