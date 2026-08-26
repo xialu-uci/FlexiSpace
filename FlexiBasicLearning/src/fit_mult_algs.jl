@@ -99,7 +99,7 @@ function ig_make_fitting_figs(result)
     @load datafile true_params
     @load datafile flexi_args
 
-    labels = FlexiBasicLearning.func_form_labels(func_form)   # <-- new
+    labels = FlexiBasicLearning.func_form_labels(func_form) 
 
     x_data = data[:, 1]
     y_data = data[:, 2:end]
@@ -127,7 +127,8 @@ function ig_make_fitting_figs(result)
     labels_flexi = vcat(["cmaes flexi"], ["gd flexi ($optimizer)" for optimizer in optimizers])
 
     fig2 = make_fit_overlay_fig([0.0], [0.0], x_grid_flexi, flexi_true, flexi_pred_list;
-            title = labels.flexi_title, labels = labels_flexi, flexi_args = flexi_args)
+            title = labels.flexi_title, xlabel = labels.flexi_x_label, labels = labels_flexi, flexi_args = flexi_args)
+            # ([0.0], [0.0], ...)
     # for loss history
     cmaes_loss_history = cmaes_result.loss_history
     cmaes_time = cmaes_result.time
@@ -181,7 +182,7 @@ function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
         # dashed vertical lines at each flexi arg location
         if !isnothing(flexi_args)
             CairoMakie.vlines!(ax, flexi_args, label = "flexi arg spacing",
-                                linestyle = :dash, color = (:gray, 0.6))
+                                linestyle = :solid, color = (:gray, 0.6))
         end
 
         axislegend(ax, position = :rb)
