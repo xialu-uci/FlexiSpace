@@ -16,7 +16,7 @@ Random.seed!(17)
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
 num_points = 40
-expdir  = "../FlexiSpaceLocal/tests/08252026/lv-test"
+expdir  = "../FlexiSpaceLocal/tests/08262026/lv-test"
 datadir = "../FlexiSpaceLocal/data/w_true_params_flexi_args/no-noise"
 
 # ------------------------------------------------------------------
@@ -67,7 +67,7 @@ s        = FlexiBasicLearning.shapes[shape_key]
 # loss_strats = ["RMSE", "normalized"]
 # reltols = [1e-3, 1e-8]
 loss_strats = ["normalized"]
-reltols = [1e-3]
+reltols = [1e-8]
 fname = FlexiBasicLearning.func_name(f)
 sname = FlexiBasicLearning.shape_name(s)
 
