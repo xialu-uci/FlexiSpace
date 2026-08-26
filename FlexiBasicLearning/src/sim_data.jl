@@ -174,21 +174,21 @@ end
 # --- plotting label helper ---
 function func_form_labels(f)
     if f === make_flexi1_func
-        return (xlabel = "x", y_labels = ["y"],
+        return (xlabel = "x", y_labels = ["y"], flexi_x_label = "x",
                 title = "Flexi1 Fit:  y = flexi(x)",
-                flexi_title = "Flexi1 Function")
+                flexi_title = "Flexi Function (of x)")
     elseif f === make_flexi1_alg1_func
-        return (xlabel = "x", y_labels = ["y"],
-                title = "Flexi1-Alg1 Fit:  y = x · flexi(x)",
-                flexi_title = "Flexi1 Function")
+        return (xlabel = "x", y_labels = ["y"], flexi_x_label = "x",
+                title = "Flexi1-Alg1 Fit:  y = x · flexi(x)", 
+                flexi_title = "Flexi Function (of x)")
     elseif f === make_flexi1_ode1_func
-        return (xlabel = "x", y_labels = ["y"],
+        return (xlabel = "t", y_labels = ["y"], flexi_x_label = "y",
                 title = "Flexi1-ODE1 Fit:  dy/dx = flexi(y)",
-                flexi_title = "Flexi1 Function (of y)")
+                flexi_title = "Flexi Function (of y)")
     elseif f === make_flexi1_lv_func
-        return (xlabel = "x", y_labels = ["y1 (prey)", "y2 (predator)"],
+        return (xlabel = "t", y_labels = ["y1 (prey)", "y2 (predator)"], flexi_x_label = "y1/(y1+1)",
                 title = "Flexi1-LV Fit",
-                flexi_title = "Flexi1 Function (of y1/(y1+1))")
+                flexi_title = "Flexi Function (of y1/(y1+1))")
     else
         error("Unknown func_form: $f")
     end

@@ -63,8 +63,13 @@ function plot_gd_tracker(gd_tracker, alg, savedir)
 end
 
 function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
-    @load datafile data 
+    @load datafile data
+    @load datafile func_form
     @load datafile true_params
+    @load datafile flexi_args
+
+    labels = FlexiBasicLearning.func_form_labels(func_form) 
+
     x_data = data[:, 1]
     y_data = data[:, 2:end] # n×k, for second figure
 
@@ -92,13 +97,16 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
 
     # ---- fig1: flexi-function-only, always scalar, unchanged ----
     fig1 = Figure(size = (800, 600))
-    ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = "x (flexifunction argument)", ylabel = "f(x)",
+    ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = labels.flexi_x_label, ylabel = "f(x)",
               title = "Fiting with $alg - Flexifunction Only History for $func_string")
 
     for (params, label, color, style) in zip(params_list, labels, colors, styles)
         ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]
         lines!(ax1, xs_flexi, ys; label = label, color = color, linestyle = style)
     end
+
+    CairoMakie.vlines!(ax1, flexi_args, label = "flexi arg spacing",
+                                linestyle = :solid, color = (:gray, 0.6)) # UNTESTED
 
     axislegend(ax1, position = :rt)
     save(joinpath(savedir, "flexifunction_history_$alg.png"), fig1)
@@ -108,7 +116,7 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
     y_labels = n_outputs == 1 ? ["y"] : ["y$j" for j in 1:n_outputs]
 
     fig2 = Figure(size = (800, 400 * n_outputs))
-    ax2 = [CairoMakie.Axis(fig2[j, 1], xlabel = "t", ylabel = y_labels[j],
+    ax2 = [CairoMakie.Axis(fig2[j, 1], xlabel = labels.xlabel, ylabel = y_labels[j],
                             title = j == 1 ? "Fiting with $alg - $func_string with Flexifunction History" : "")
            for j in 1:n_outputs]
 
