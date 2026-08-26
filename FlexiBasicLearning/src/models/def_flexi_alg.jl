@@ -6,7 +6,7 @@ struct ModelFlexiAlg <: AbstractFlexiBasicModel
     
 end
 
-function make_ModelFlexiAlg(;flexi_dofs=5)
+function make_ModelFlexiAlg(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8) # for call consistency
    
     # params = ComponentArray(
     #     flex1_params = FlexiFunctions.generate_flexi_ig(flexi_dofs)

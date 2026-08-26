@@ -13,11 +13,14 @@ using Random
     #(2) helper functions to set_up_prob(), fit_cmaes(), fit_gd() to make it easier to call separately.
     #(3) if time_grads = true, skip cmaes and only run gd, since cmaes is not needed for timing grads
 
-function ig_fit_all_algs(datafile, savedir, make_model; ig = nothing, optimizers = [:gradient_descent], maxiters = 10000, save_parameters = false, time_grads = false)
+function ig_fit_all_algs(datafile, savedir, make_model; 
+    ig = nothing, optimizers = [:gradient_descent], differ = Zygote.gradient, maxiters = 10000, 
+    save_parameters = false, time_grads = false,
+    loss_strategy = "RMSE")
     @load datafile data
     
     
-    my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model)
+    my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
     if isnothing(ig)
         ig = deepcopy(my_model.params)
     end
@@ -44,7 +47,10 @@ function ig_fit_all_algs(datafile, savedir, make_model; ig = nothing, optimizers
     # gd_time, gd_result = fit_gd(my_prob, ig; optimizers=optimizers, maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
     for optimizer in optimizers
         println("Using optimizer: $optimizer")
-        gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; optimizer=optimizer, maxiters=maxiters, save_parameters = save_parameters, time_grads = time_grads)
+        gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; 
+        optimizer=optimizer, differ = differ, 
+        maxiters=maxiters, save_parameters = save_parameters,
+        time_grads = time_grads)
         result["gd_$(optimizer)_result"] = gd_result # time in gd_result
     end
     
@@ -53,7 +59,7 @@ function ig_fit_all_algs(datafile, savedir, make_model; ig = nothing, optimizers
     return result
 end
 
-function set_up_prob(data, make_model)
+function set_up_prob(data, make_model, loss_strategy)
     # @load datafile data
     num_points = size(data)[1]
     full = Vector{Bool}(trues(num_points))
@@ -61,11 +67,17 @@ function set_up_prob(data, make_model)
     my_prob = LearningProblem(
         data = data,
         model = my_model,
-        mask = full
+        mask = full,
+        loss_strategy = loss_strategy
     )
     return my_prob, my_model
 end
 
+
+# normalize any model output to an n×k matrix, k = number of y-components
+as_matrix(y::AbstractMatrix) = y
+as_matrix(y::AbstractVector{<:Real}) = reshape(y, :, 1)               # scalar-output model
+as_matrix(y::AbstractVector{<:AbstractVector}) = stack(y; dims = 1)    # for mult outputs
 
 
 function ig_make_fitting_figs(result)
@@ -85,32 +97,38 @@ function ig_make_fitting_figs(result)
     @load datafile data
     @load datafile func_form
     @load datafile true_params
+    @load datafile flexi_args
+
+    labels = FlexiBasicLearning.func_form_labels(func_form) 
+
     x_data = data[:, 1]
-    y_data = data[:, 2]
+    y_data = data[:, 2:end]
     x_grid = collect(LinRange(0.0, maximum(x_data), 500))
     x_grid_flexi = collect(LinRange(0.0, 1.0, 500))
     cmaes_fit_params = cmaes_result.fit_params
     gd_fit_params_list = [gd_result.fit_params for gd_result in gd_results]
     true_func = func_form(true_params)
-    
+
     y_true  = true_func.(x_grid)
     y_cmaes = fw(x_grid, cmaes_fit_params, my_model)
-    #println("y_cmaes:  $(size(y_cmaes))")
     y_gd_list = [fw(x_grid, gd_fit_params, my_model) for gd_fit_params in gd_fit_params_list]
     y_pred_list = vcat([y_cmaes], y_gd_list)
     labels_fits = vcat(["cmaes fit"],["gd fit ($optimizer)" for optimizer in optimizers])
 
-    fig1 = make_fit_overlay_fig(x_data, y_data, x_grid, y_true, y_pred_list; title = "Fit Comparison", labels = labels_fits)
+    fig1 = make_fit_overlay_fig(x_data, y_data, x_grid, y_true, y_pred_list;
+            title = labels.title, xlabel = labels.xlabel,
+            y_labels = labels.y_labels, labels = labels_fits)
 
-    # for flexifunction only overlay
+    # flexifunction-only overlay
     flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params))
     flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params))
     flexi_gd_list = [FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params)) for gd_fit_params in gd_fit_params_list]
-    flexi_pred_list = vcat([flexi_cmaes],flexi_gd_list)
+    flexi_pred_list = vcat([flexi_cmaes], flexi_gd_list)
     labels_flexi = vcat(["cmaes flexi"], ["gd flexi ($optimizer)" for optimizer in optimizers])
-    fig2 = make_fit_overlay_fig([0.0], [0.0], x_grid_flexi, flexi_true, flexi_pred_list; title = "Flexifunction only comparison", labels = labels_flexi) # don't plot datapoints
 
-
+    fig2 = make_fit_overlay_fig([0.0], [0.0], x_grid_flexi, flexi_true, flexi_pred_list;
+            title = labels.flexi_title, xlabel = labels.flexi_x_label, labels = labels_flexi, flexi_args = flexi_args)
+            # ([0.0], [0.0], ...)
     # for loss history
     cmaes_loss_history = cmaes_result.loss_history
     cmaes_time = cmaes_result.time
@@ -131,23 +149,45 @@ function ig_make_fitting_figs(result)
     return fig1, fig2, fig3
 end
 
-function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list; title = "Fit Comparison", labels = ["cmaes fit", "gd fit"])
-    fig = Figure(size = (800, 500))
-    ax = CairoMakie.Axis(fig[1, 1], xlabel = "t", ylabel = "y", title = title)
-    CairoMakie.lines!(ax, x_grid, y_true,  label = "true", linewidth = 2, color = :black, linestyle = :dash)
+function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
+        title = "Fit Comparison", labels = ["cmaes fit", "gd fit"], xlabel = "t", y_labels = nothing, flexi_args = nothing)
 
-    n = length(y_pred_list)
-    colors = n == 1 ? [:red] : cgrad(:tab10, n, categorical = true)
+    y_true = as_matrix(y_true)
+    y_pred_list = [as_matrix(yp) for yp in y_pred_list]
+    y_data_mat = isempty(y_data) ? nothing : as_matrix(y_data)
 
-    for (y_pred, label, color) in zip(y_pred_list, labels, colors)
-        #println("y_pred:  $(size(y_pred))")
-        #println("x_grid:  $(size(x_grid))")
+    n_outputs = size(y_true, 2)
+    y_labels = isnothing(y_labels) ? ["y$i" for i in 1:n_outputs] : y_labels
 
+    fig = Figure(size = (800, 400 * n_outputs))
+    n_pred = length(y_pred_list)
+    colors = n_pred == 1 ? [:red] : cgrad(:tab10, n_pred, categorical = true)
 
-        CairoMakie.lines!(ax, x_grid, y_pred, label = label, linewidth = 2, color = color)
+    for j in 1:n_outputs
+        ax = CairoMakie.Axis(fig[j, 1], xlabel = xlabel, ylabel = y_labels[j],
+                              title = j == 1 ? title : "")
+        CairoMakie.lines!(ax, x_grid, y_true[:, j], label = "true",
+                           linewidth = 2, color = :black, linestyle = :dash)
+
+        for (y_pred, label, color) in zip(y_pred_list, labels, colors)
+            CairoMakie.lines!(ax, x_grid, y_pred[:, j], label = label,
+                               linewidth = 2, color = color)
+        end
+
+        if !isnothing(y_data_mat)
+            CairoMakie.scatter!(ax, x, y_data_mat[:, j], label = "noisy data",
+                                 markersize = 5, color = (:orange))
+        end
+
+        # dashed vertical lines at each flexi arg location
+        if !isnothing(flexi_args)
+            CairoMakie.vlines!(ax, flexi_args, label = "flexi arg spacing",
+                                linestyle = :solid, color = (:gray, 0.6))
+        end
+
+        axislegend(ax, position = :rb)
     end
-    CairoMakie.scatter!(ax, x, y_data, label = "noisy data", markersize = 5, color = (:orange))
-    axislegend(ax, position = :rb)
+
     return fig
 end
 
@@ -185,12 +225,21 @@ end
 
 
 #take igs as a list of initial guesses, and return a list of results for each ig
-function fit_all_algs(datafile, savedir, make_model; igs = [nothing], optimizers = [:gradient_descent], maxiters = 10000, save_parameters = false, time_grads = false)
+function fit_all_algs(datafile, savedir, make_model; 
+    igs = [nothing], optimizers = [:gradient_descent], differ = Zygote.gradient,
+     maxiters = 10000,
+      save_parameters = false, time_grads = false,
+      loss_strategy = "RMSE")
+
     results = []
     for (idx, ig) in enumerate(igs)
         println("Fitting with initial guess $idx")
         subdir = joinpath(savedir, "fit_ig$(idx)")
-        result = ig_fit_all_algs(datafile, subdir, make_model; ig = ig, optimizers = optimizers, maxiters = maxiters, save_parameters = save_parameters, time_grads = time_grads)
+        result = ig_fit_all_algs(datafile, subdir, make_model; 
+        ig = ig, optimizers = optimizers, 
+        differ = differ, maxiters = maxiters,
+         save_parameters = save_parameters, time_grads = time_grads,
+        loss_strategy = loss_strategy)
         push!(results, result)
     end
    

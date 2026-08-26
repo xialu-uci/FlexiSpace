@@ -63,16 +63,19 @@ function plot_gd_tracker(gd_tracker, alg, savedir)
 end
 
 function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
-    @load datafile data 
+    @load datafile data
+    @load datafile func_form
     @load datafile true_params
-    x_data = data[:, 1]
-    y_data = data[:, 2] # for second figure
+    @load datafile flexi_args
 
+    labels = FlexiBasicLearning.func_form_labels(func_form) 
+
+    x_data = data[:, 1]
+    y_data = data[:, 2:end] # n×k, for second figure
 
     ig = result.parameter_history[1]
     best = result.parameter_history[end]
     n_best = length(result.parameter_history)
-    # choose 10 log-evenly between
     log_idxs = exp.(range(log(2), log(n_best - 1), length = n_intermediate))
     inter_idxs = round.(Int, log_idxs)
     inter_idxs = unique(inter_idxs)
@@ -83,10 +86,6 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
     xs = range(0.0, maximum(x_data), length = n_points)
     xs_flexi = range(0.0, 1.0, length = n_points)
 
-    # label initial guess and best fit, others labeled by index in parameter_history
-    # ig is orange solid
-    # best fit is green solid
-    # rest is gray dashed
     labels = vcat(["initial guess"],
                    ["iter $(i)" for i in inter_idxs],
                    ["best fit"], ["ground truth"])
@@ -96,49 +95,47 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
     colors = vcat([:green], inter_colors, [:indigo], [:black])
     styles = vcat([:solid], fill(:dash, length(intermediates)), [:solid], [:dot])
 
-
-    fig1 = Figure(size =(800, 600))
-
-    ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = "x (flexifunction argument)", ylabel = "f(x)",
+    # ---- fig1: flexi-function-only, always scalar, unchanged ----
+    fig1 = Figure(size = (800, 600))
+    ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = labels.flexi_x_label, ylabel = "f(x)",
               title = "Fiting with $alg - Flexifunction Only History for $func_string")
 
-
-    # save 
     for (params, label, color, style) in zip(params_list, labels, colors, styles)
         ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]
         lines!(ax1, xs_flexi, ys; label = label, color = color, linestyle = style)
     end
 
+    CairoMakie.vlines!(ax1, flexi_args, label = "flexi arg spacing",
+                                linestyle = :solid, color = (:gray, 0.6)) # UNTESTED
+
     axislegend(ax1, position = :rt)
     save(joinpath(savedir, "flexifunction_history_$alg.png"), fig1)
 
-    
-    
-    fig2 = Figure(size =(800, 600))
+    # ---- fig2: full model output, may be multi-component ----
+    n_outputs = size(FlexiBasicLearning.as_matrix(y_data), 2)
+    y_labels = n_outputs == 1 ? ["y"] : ["y$j" for j in 1:n_outputs]
 
-    ax2 = CairoMakie.Axis(fig2[1, 1], xlabel = "t", ylabel = "y",
-            title = "Fiting with $alg - $func_string with Flexifunction History")
+    fig2 = Figure(size = (800, 400 * n_outputs))
+    ax2 = [CairoMakie.Axis(fig2[j, 1], xlabel = labels.xlabel, ylabel = y_labels[j],
+                            title = j == 1 ? "Fiting with $alg - $func_string with Flexifunction History" : "")
+           for j in 1:n_outputs]
 
-
-    # save 
     for (params, label, color, style) in zip(params_list, labels, colors, styles)
         params_func = func_form(params)
-        ys = [params_func(x) for x in xs]
-        lines!(ax2, xs, ys; label = label, color = color, linestyle = style)
+        ys = FlexiBasicLearning.as_matrix([params_func(x) for x in xs])   # n_points × n_outputs
+        for j in 1:n_outputs
+            lines!(ax2[j], xs, ys[:, j]; label = label, color = color, linestyle = style)
+        end
     end
 
-    # plot data points on top
+    # plot data points on top, one column per output
+    y_data_mat = FlexiBasicLearning.as_matrix(y_data)
+    for j in 1:n_outputs
+        CairoMakie.scatter!(ax2[j], x_data, y_data_mat[:, j], label = "data", markersize = 10, color = (:red, 0.4))
+        axislegend(ax2[j], position = :rt)
+    end
 
-    CairoMakie.scatter!(ax2, x_data, y_data, label = "data", markersize = 10, color = (:red, 0.4))
-
-
-    axislegend(ax2, position = :rt)
     save(joinpath(savedir, "fullfunction_history_$alg.png"), fig2)
 
-    
     return fig1, fig2
-
-
-    
-
 end
