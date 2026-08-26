@@ -95,12 +95,12 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
             flush(stdout)
         end
         
-         # early stopping: if within sqrt(eps()) of the minimum loss, stop early (this is consistent with hager zhang 2006)
-        if lossval < config.min_loss + sqrt(eps())
-            println("Early stopping: loss $lossval is within sqrt(eps()) of the minimum loss $(config.min_loss) at iteration $current_iter")
-            return true
-        end
-        
+        #  # early stopping: if within sqrt(eps()) of the minimum loss, stop early (this is consistent with hager zhang 2006)
+        # if lossval < config.min_loss + sqrt(eps())
+        #     println("Early stopping: loss $lossval is within sqrt(eps()) of the minimum loss $(config.min_loss) at iteration $current_iter")
+        #     return true
+        # end
+
         return false
     end
 
@@ -134,7 +134,8 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     
     
     sol = solve(prob,  CMAEvolutionStrategyOpt(); 
-                callback=callback, maxiters=3e7, sigma0=cmaes_options[:sigma0]) # num iteration fed to here. also track best
+    # hopefully ftol forces early stop.
+                callback=callback, maxiters=3e7, ftol=1e-8, sigma0=cmaes_options[:sigma0]) # num iteration fed to here. also track best
     println("Ran $(length(loss_history)) iterations (maxiters was $(3e7))")
     println("Final retcode: $(sol.retcode)")
     # println("CMAES fields: ", fieldnames(typeof(Evolutionary.CMAES())))    # println(sol)

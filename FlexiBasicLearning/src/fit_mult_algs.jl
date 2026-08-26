@@ -3,6 +3,7 @@ using FlexiBasicLearning
 using CairoMakie
 using LinearAlgebra
 using Random
+
 #load crooked sim data
 
 # datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"

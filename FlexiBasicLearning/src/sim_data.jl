@@ -14,7 +14,7 @@ function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, sh
 
     x_max, true_func, flexi_arg_func = func_form(true_params; for_sim = true)
     # num_points must be in
-    x = LinRange(0.0,x_max, 20)
+    x = LinRange(0.0,x_max, num_points)
    
     y = true_func.(x)
     flexi_args = flexi_arg_func.(x)
@@ -123,7 +123,7 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
         y1, y2 = y
         y1_mod = y1 / (y1 + 1)               
         dy1 = (y1 + 1) * f(y1_mod) - y1 * y2
-        dy2 = - a * y2 * + y1 * y2
+        dy2 = - a * y2 + y1 * y2
         return [dy1, dy2]
     end
 
