@@ -70,6 +70,8 @@ function gradient_descent_learn(learning_problem, ig;
 
 
     loss_history = Float64[]
+    best_loss = Ref(Inf)
+    best_params = Ref{Any}(nothing)
     # grad_norm_history = Float64[]
     
 
@@ -83,7 +85,10 @@ function gradient_descent_learn(learning_problem, ig;
         push!(loss_history, lossval)
         current_iter = length(loss_history)
         
-        
+        if lossval < best_loss[]
+            best_loss[] = lossval
+            best_params[] = copy(p.u)
+        end
 
         if config.save_parameters
             # if current_iter % config.print_frequency == 0
@@ -135,6 +140,7 @@ function gradient_descent_learn(learning_problem, ig;
     
     
     println("Final loss: $(sol.objective)")
+    println("Best loss found during optimization: $(best_loss[])")
 
     if config.time_grads
         println("Total gradient evaluations: $(grad_eval_count[])")
@@ -142,7 +148,7 @@ function gradient_descent_learn(learning_problem, ig;
 
     time = Base.time() - t0
     println("Gradient descent ($optimizer) time: $time")
-    result = (fit_params = sol.u, loss_history = loss_history, optimizer = optimizer, time = time,
+    result = (fit_params = best_params[], loss_history = loss_history, optimizer = optimizer, time = time,
             gradient_history = config.save_parameters ? gradient_history : nothing,
             parameter_history = config.save_parameters ? parameter_history : nothing,
             num_grad_evals = config.time_grads ? grad_eval_count[] : nothing,
