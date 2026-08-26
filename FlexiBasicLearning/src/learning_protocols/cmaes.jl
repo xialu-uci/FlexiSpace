@@ -95,6 +95,11 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
             flush(stdout)
         end
         
+         # early stopping: if within sqrt(eps()) of the minimum loss, stop early (this is consistent with hager zhang 2006)
+        if lossval < config.min_loss + sqrt(eps())
+            println("Early stopping: loss $lossval is within sqrt(eps()) of the minimum loss $(config.min_loss) at iteration $current_iter")
+            return true
+        end
         
         return false
     end
