@@ -111,7 +111,7 @@ end
 
 modes = ["fw", "rv", "fd"]
 
-y_metrics = [:mean_grad_time, :median_grad_time, :n_grad_calls]
+y_metrics = [:mean_grad_time, :median_grad_time, :n_grad_calls, :mean_grad_alloc, :median_grad_alloc]
 metric_labels = ["mean grad compute (s)", "median grad compute (s)", "number of grad calls in 10 iters"]
 x_nums = [:dof, :num_points]
 fixed_nums = [:num_points, :dof]

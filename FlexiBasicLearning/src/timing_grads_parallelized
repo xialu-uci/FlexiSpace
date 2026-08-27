@@ -1,0 +1,98 @@
+using FlexiBasicLearning
+using JLD2
+using DataFrames
+using Statistics
+using Zygote
+using FiniteDiff
+using ForwardDiff
+
+
+# load args
+diffname, fname, sname, dof_str, np_str = ARGS
+
+# make d, np ints
+d = parse(Int, dof_str)
+np = parse(Int, dof_str)
+
+# convert fname to f and f_str
+func_map = Dict(
+    "flexi1"      => FlexiBasicLearning.make_flexi1_func,
+    "flexi1alg1" => FlexiBasicLearning.make_flexi1_alg1_func,
+    "flexi1ode1" => FlexiBasicLearning.make_flexi1_ode1_func,
+)
+f = func_map[fname]
+
+func_strings = Dict(
+    "flexi1"      => "y = f(t)",
+    "flexi1alg1" => "y = t ⋅ f(t)",
+    "flexi1ode1" => "y' = f(y)",
+)
+
+f_str = func_strings[fname]
+
+# model maker 
+function make_model_for(f, d)
+    if f == FlexiBasicLearning.make_flexi1_func
+        return () -> FlexiBasicLearning.make_ModelFlexi1(; flexi_dofs = d)
+    elseif f == FlexiBasicLearning.make_flexi1_alg1_func
+        return () -> FlexiBasicLearning.make_ModelFlexiAlg(; flexi_dofs = d)
+    elseif f == FlexiBasicLearning.make_flexi1_ode1_func
+        return () -> FlexiBasicLearning.make_ModelFlexiODE(; flexi_dofs = d)
+    else
+        error("Unrecognized func: $f")
+    end
+end
+
+# define my locations
+expdir_base = "../FlexiSpaceLocal/exp/08262026/fixed-gts"
+datadir_base = "../FlexiSpaceLocal/data/w_true_params_flexi_args/no-noise" #TODO: need to rsync my data to FlexiSpaceLocal --> email hpc3 people
+
+gt = 4
+
+
+
+# ------------------------------------------------------------------
+# main sweep
+# ------------------------------------------------------------------
+
+expdir = joinpath(expdir_base, diffname)
+datafile = joinpath(datadir_base, "$(fname)-$(gt)dof-$(np)obs", "sim_data_$(sname).jld2")
+exp_subfolder = "gt-$(gt)dof/$(fname)-$(d)dof-$(np)obs"
+savedir  = joinpath(expdir, exp_subfolder, sname)
+
+make_model = make_model_for(f, d)
+
+        # println("Fitting: func=$fname shape=$sname dof=$d num_points=$np. Ground truth is $datafile")
+result = FlexiBasicLearning.fit_all_algs(
+    datafile, savedir, make_model;  differ = differ,
+    maxiters = 3, save_parameters = true, time_grads = true,
+)
+        # println("Finished: func=$fname shape=$sname dof=$d num_points=$np")
+
+        grad_times = result[1]["gd_gradient_descent_result"].grad_time_history
+        grad_allocs = result[1]["gd_gradient_descent_result"].grad_alloc_history
+        # push!(grad_time_check, grad_times)
+row = (
+    func_form        = fname,
+    func_string      = f_str,
+    shape            = sname,
+    dof              = d,
+    num_points       = np,
+    mean_grad_time   = mean(grad_times),
+    median_grad_time = median(grad_times),
+    total_grad_time  = sum(grad_times),
+    mean_grad_alloc   = mean(grad_allocs),
+    median_grad_alloc = median(grad_allocs),
+    total_grad_alloc  = sum(grad_allocs),
+    grad_time_history = grad_times,
+    n_grad_calls     = result[1]["gd_gradient_descent_result"].num_grad_evals,
+    gd_time          = result[1]["gd_gradient_descent_result"].time,
+    save_dir         = savedir,
+)
+   
+    
+
+mkpath(joinpath(expdir, "task_results"))
+outfile = joinpath(expdir, "task_results", "$(diffname)_$(fname)_$(sname)_$(d)dof_$(np)np.jld2")
+JLD2.save(outfile, "row", row)
+println("Saved to $outfile")

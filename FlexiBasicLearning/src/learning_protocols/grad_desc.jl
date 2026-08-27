@@ -78,8 +78,9 @@ function gradient_descent_learn(learning_problem, ig;
     parameter_history = config.save_parameters ? [] : nothing
     gradient_history = config.save_parameters ? [] : nothing
     grad_time_history = config.time_grads ? [] : nothing
+    grad_alloc_history = config.time_grads ? [] : nothing # new
     
-    timing_buf = config.time_grads ? zeros(n) : nothing
+    timing_buf = config.time_grads ? zeros(n) : nothing 
 
     function callback(p, lossval)
         push!(loss_history, lossval)
@@ -100,10 +101,13 @@ function gradient_descent_learn(learning_problem, ig;
 
         if config.time_grads
             grad_fn!(timing_buf, p.u, nothing)  # warm-up / compilation
-            t0 = time_ns()
+            t0 = time_ns() # TODO: add memory
             grad_fn!(timing_buf, p.u, nothing)
             elapsed = (time_ns() - t0) / 1e9
             push!(grad_time_history, elapsed)
+
+            allocs = @allocated grad_fn!(timing_buf, p.u, nothing) # new
+            push!(grad_alloc_history, allocs) # new
         end
 
 
@@ -152,7 +156,8 @@ function gradient_descent_learn(learning_problem, ig;
             gradient_history = config.save_parameters ? gradient_history : nothing,
             parameter_history = config.save_parameters ? parameter_history : nothing,
             num_grad_evals = config.time_grads ? grad_eval_count[] : nothing,
-            grad_time_history = config.time_grads ? grad_time_history : nothing)
+            grad_time_history = config.time_grads ? grad_time_history : nothing,
+            grad_alloc_history = config.time_grads ? grad_alloc_history : nothing)
 
 
 
