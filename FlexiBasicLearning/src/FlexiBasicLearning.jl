@@ -23,7 +23,9 @@ export LinearAlgebra, ComponentArrays, FlexiFunctions, Random, JLD2
 
 
 abstract type AbstractModel end # stores model type (for fw and loss) and params
-abstract type AbstractFlexiBasicModel <: AbstractModel end  
+abstract type AbstractFlexiBasicModel <: AbstractModel end 
+abstract type AbstractFlexiModel <: AbstractModel end  
+
 
 # include("shared_model_functions.jl")
 

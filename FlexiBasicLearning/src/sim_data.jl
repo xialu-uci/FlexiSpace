@@ -136,6 +136,7 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
         return x -> sol(x)
     end
 end
+    
 
 # function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8)
 #     f = y ->  FlexiFunctions.evaluate_decompress(y, params) # dy/dx = f(y)
@@ -221,10 +222,16 @@ end
 
 # funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
 
-# for n in num_points, f in funcs, d in dofs, sname in keys
-#     fname = func_name(f)
-#     s        = FlexiBasicLearning.shapes[sname]
-#     save_name = joinpath("w_true_params_flexi_args/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
-#     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
-# end
+num_points = [20]
+dofs = [4]
+keys = ["crooked"]
+# funcs = [FlexiBasicLearning.make_flexi1_lv_func(;a=2.0)]
+
+
+for n in num_points, f in funcs, d in dofs, sname in keys
+    fname = func_name(f)
+    s        = FlexiBasicLearning.shapes[sname]
+    save_name = joinpath("w_true_params_flexi_args/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+    sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+end
 

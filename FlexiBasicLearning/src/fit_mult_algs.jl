@@ -17,7 +17,7 @@ using Random
 function ig_fit_all_algs(datafile, savedir, make_model; 
     ig = nothing, optimizers = [:gradient_descent], differ = Zygote.gradient, maxiters = 10000, 
     save_parameters = false, time_grads = false,
-    loss_strategy = "RMSE")
+    loss_strategy = "normalized")
     @load datafile data
     
     
