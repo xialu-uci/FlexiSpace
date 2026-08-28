@@ -1,4 +1,4 @@
-struct ModelMixedLV <: AbstractFlexiBasicModel
+struct ModelMixedLV <: AbstractFlexiModel
     # u0::Vector{Float64}  # Not used for algebraic model, but kept for compatibility for now...
     # params::ComponentArray{Float64}'
     p_classical_derepresented_ig::ComponentArray{Float64} # classical parameters
@@ -31,7 +31,7 @@ function make_ModelMixedLV(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8)
     
     params_derepresented_ig = ComponentArray(
         p_classical=deepcopy(p_classical_derepresented_ig),
-        flexi1_params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
+        flex1_params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
     )
 
     params_repr_ig = ComponentArray(

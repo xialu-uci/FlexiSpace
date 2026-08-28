@@ -45,6 +45,7 @@ include("models/def_flexi_basic.jl")
 include("models/def_flexi_alg.jl")
 include("models/def_flexi_ode.jl")
 include("models/def_flexi_lv.jl")
+include("models/def_mixed_lv.jl")
 
 # include helpers
 include("get_loss.jl")
@@ -54,6 +55,7 @@ include("get_loss.jl")
 include("learning_protocols/base.jl")
 include("learning_protocols/cmaes.jl")
 include("learning_protocols/grad_desc.jl")
+include("learning_protocols/diffevol.jl")
 
 # include functions for fitting and plotting
 include("fit_flexi.jl")

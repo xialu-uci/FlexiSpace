@@ -9,6 +9,9 @@ using FlexiBasicLearning
 using FiniteDiff
 using ForwardDiff
 
+
+
+# takes p_repr.flex1_params
 function gradient_descent_learn(learning_problem, ig; 
     optimizer = :gradient_descent, 
     differ = :zygote, # also try ForwardDiff.gradient, FiniteDiff.grad, FiniteDiff.finite_difference_gradient
@@ -161,7 +164,8 @@ function gradient_descent_learn(learning_problem, ig;
 
 
 
-    return result
+    return result # returns p_repr.flex1_params
+
     
 end
 
