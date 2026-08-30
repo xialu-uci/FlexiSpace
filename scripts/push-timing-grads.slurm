@@ -73,7 +73,7 @@ echo "Arguments: $ARGS"
 
 
 echo "Running timing_grads-parallel.jl" 
-date; /usr/bin/time -v stdbuf -oL julia +1.11.6 --project=FlexiBasicLearning FlexiBasicLearning/src/timing_grads-parallel.jl $ARGS \
+date; /usr/bin/time -v stdbuf -oL julia +1.11.6 --project=FlexiBasicLearning FlexiBasicLearning/src/timing_grads_parallel.jl $ARGS \
 > $OUTPUTPATH/logs/$SLURM_ARRAY_JOB_ID.$RUNNAME.$SLURM_ARRAY_TASK_ID.log 2>&1 ; date
 
 # After job completes, move the logs
