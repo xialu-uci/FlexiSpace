@@ -2,7 +2,7 @@
 
 julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "8c63c5d9fb1ccac74d520194dfed85393a3a3ac6"
+project_hash = "fcecf3ac86372610d23bb4bc96c0c2aafc2bcdb5"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "d9aaef7c63466eee4de23b4d9dad03629df54bea"
@@ -185,6 +185,20 @@ version = "1.4.0"
 git-tree-sha1 = "4661a9d719ef993f2cb792b65d9b810019a4e36d"
 uuid = "b2a6c25c-c996-4615-94ab-6e519ffb8690"
 version = "1.0.3"
+
+[[deps.BlackBoxOptim]]
+deps = ["Compat", "Distributed", "Distributions", "LinearAlgebra", "PrecompileTools", "Printf", "Random", "Statistics", "StatsAPI", "StatsBase"]
+git-tree-sha1 = "67dbdbe9b34f7c74c42bb67ea6e75d8c1d8f48c0"
+uuid = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
+version = "0.6.12"
+
+    [deps.BlackBoxOptim.extensions]
+    BlackBoxOptimRealtimePlotServerExt = ["HTTP", "JSON", "Sockets"]
+
+    [deps.BlackBoxOptim.weakdeps]
+    HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+    JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+    Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [[deps.BracketingNonlinearSolve]]
 deps = ["CommonSolve", "ConcreteStructs", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase", "SciMLLogging"]
@@ -1839,6 +1853,13 @@ deps = ["ADTypes", "ArrayInterface", "ConsoleProgressMonitor", "DocStringExtensi
 git-tree-sha1 = "cadc8ea8006e2939b8f3c49ef9be05f156cd0f61"
 uuid = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
 version = "5.6.2"
+
+[[deps.OptimizationBBO]]
+deps = ["BlackBoxOptim", "OptimizationBase", "Reexport", "SciMLBase", "SciMLLogging"]
+git-tree-sha1 = "ff0f481ee8a413d838174dcb684ac53933ccd204"
+uuid = "3e6eede4-6085-4f62-9a71-46d9bc1eb92b"
+version = "0.4.11"
+weakdeps = ["LogExpFunctions"]
 
 [[deps.OptimizationBase]]
 deps = ["ADTypes", "ArrayInterface", "DifferentiationInterface", "DocStringExtensions", "FastClosures", "LinearAlgebra", "PDMats", "PrecompileTools", "Reexport", "SciMLBase", "SciMLLogging", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings", "SymbolicIndexingInterface"]

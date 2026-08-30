@@ -12,7 +12,13 @@ diffname, fname, sname, dof_str, np_str = ARGS
 
 # make d, np ints
 d = parse(Int, dof_str)
-np = parse(Int, dof_str)
+np = parse(Int, np_str)
+
+# make diffname differ
+differs = [:zygote, :forwarddiff, :finitediff]
+diff_name_conv = ["rv", "fw", "fd"]
+differ_map = Dict(zip(diff_name_conv, differs))
+differ = differ_map[diffname]
 
 # convert fname to f and f_str
 func_map = Dict(
@@ -44,7 +50,7 @@ function make_model_for(f, d)
 end
 
 # define my locations
-expdir_base = "../FlexiSpaceLocal/exp/08262026/fixed-gts"
+expdir_base = "../FlexiSpaceLocal/exp/08302026/fixed-gts"
 datadir_base = "../FlexiSpaceLocal/data/w_true_params_flexi_args/no-noise" #TODO: need to rsync my data to FlexiSpaceLocal --> email hpc3 people
 
 gt = 4
