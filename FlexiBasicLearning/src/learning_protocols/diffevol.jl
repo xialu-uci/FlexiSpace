@@ -1,3 +1,4 @@
+using Optimization, OptimizationBBO
 
 # for objective function, need to define function that takes in parameter array and returns loss (pass get_loss with reconstructed params)
 # function obj_func(x, p_repr_ig)
@@ -11,9 +12,9 @@
 function bbo_learn(learning_problem, p_repr_ig)
 
     function obj_func(x, p)
-        p_repr = CombiCellModelLearning.reconstruct_learning_params_from_array(x, p_repr_ig,learning_problem.model) # this is where params are updated # the trick is the x is the actual params we want. 
+        p_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(x, p_repr_ig,learning_problem.model) # this is where params are updated # the trick is the x is the actual params we want. 
         # only pass through p_repr_ig for the keys
-        return CombiCellModelLearning.get_loss(p_repr; learning_problem=learning_problem)
+        return FlexiBasicLearning.get_loss(p_repr; learning_problem=learning_problem)
     end
     # initial guess params array
     classical_params_array = collect(values(copy(p_repr_ig.p_classical)))
@@ -26,7 +27,7 @@ function bbo_learn(learning_problem, p_repr_ig)
     maxiters = 300000 # not reduced for testing?
     # callback is a function called at each iteration, s.t. optimzation stops if it returns true
     config = CallbackConfig() # just stores info for callback function in fields
-    callback, loss_history = CombiCellModelLearning.create_bbo_callback_with_early_termination(
+    callback, loss_history = FlexiBasicLearning.create_bbo_callback_with_early_termination(
     config, maxiters)
 
 
@@ -36,12 +37,12 @@ function bbo_learn(learning_problem, p_repr_ig)
         obj_func,
         classical_params_array,
         p;
-        lb= learning_problem.p_repr_lb,
-        ub=learning_problem.p_repr_ub)
+        lb= FlexiBasicLearning.represent(learning_problem.model.p_derepresented_lowerbounds, learning_problem.model),
+        ub=FlexiBasicLearning.represent(learning_problem.model.p_derepresented_upperbounds, learning_problem.model))
 
     # solve optimization problem
-    sol = solve(prob, BBO_adaptive_de_rand_1_bin(); callback=callback, maxiters=maxiters)
-    final_params_repr = CombiCellModelLearning.reconstruct_learning_params_from_array(sol.minimizer, p_repr_ig, learning_problem.model)
+    sol = solve(prob, OptimizationBBO.BBO_adaptive_de_rand_1_bin(); callback=callback, maxiters=maxiters)
+    final_params_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(sol.minimizer, p_repr_ig, learning_problem.model)
     # final_params_derepr = CombiCellModelLearning.derepresent_all(final_params_repr, intPoints, learning_problem.model)
 
     result = (fit_params_repr = final_params_repr, loss_history = loss_history) # returns p_repr

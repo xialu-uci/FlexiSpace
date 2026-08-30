@@ -58,13 +58,14 @@ end
 
 
 function make_rhs(model::ModelMixedLV; gradient_mode = false)
-    function rhs(du, u, params, t)
+    function rhs(du, u, params_derepr, t)
+        a = params_derepr.p_classical
         x, y = u
         # println(x)
         x_mod = x/(x+1)
-        a = 1.0 #TODO: use p_classical here
+        # a = 1.0 #TODO: use p_classical here
         # du .= FlexiFunctions.evaluate_decompress.(u, Ref(params); gradient_mode=gradient_mode)
-        du[1] = (x+1) * FlexiFunctions.evaluate_decompress(x_mod, params; gradient_mode = gradient_mode) - x*y
+        du[1] = (x+1) * FlexiFunctions.evaluate_decompress(x_mod, params_derepr.flex1_params; gradient_mode = gradient_mode) - x*y
         du[2] = -a*y + x*y
 
         return nothing
@@ -93,7 +94,7 @@ function fw(x::AbstractVector, params, model::ModelMixedLV; gradient_mode = fals
     return y
 end
 
-function represent_on_type(p_classical_derepresented, model::ModelMixedLV)
+function represent_on_type(p_classical_derepresented,  model_by_type::Type{ModelMixedLV})
     # initial transformations, subject to change
    return  ComponentArray(
         a=log(p_classical_derepresented.a),  # log

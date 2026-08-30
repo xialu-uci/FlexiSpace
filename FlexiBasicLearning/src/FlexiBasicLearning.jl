@@ -8,6 +8,8 @@ using JLD2
 using Printf
 using Optim, Optimization, OptimizationEvolutionary
 using OptimizationOptimJL
+using OptimizationBBO # This contains BBO Differential Evolution
+
 using Optimisers, Zygote
 using ChainRulesCore # can prob get rid of ChainRulesCore
 using SciMLSensitivity
@@ -48,6 +50,7 @@ include("models/def_flexi_alg.jl")
 include("models/def_flexi_ode.jl")
 include("models/def_flexi_lv.jl")
 include("models/def_mixed_lv.jl")
+include("shared_model_functions.jl")
 
 # include helpers
 include("get_loss.jl")
