@@ -82,6 +82,7 @@ const shapes = Dict(
     "crooked" => FlexiBasicLearning.crooked_flexi,
     "cu"      => FlexiBasicLearning.cu_flexi,
     "cd"      => FlexiBasicLearning.cd_flexi,
+    "id"      => FlexiBasicLearning.id_flexi
 )
 
 # maps func_key -> (dof -> make_model closure)

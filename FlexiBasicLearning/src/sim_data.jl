@@ -6,7 +6,7 @@ using OrdinaryDiffEq
 # using SciMLBase
 #TODO: modify to include flexi_args in datafile
 
-function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = crooked_flexi, ode = false, save_name = nothing)
+function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
 
     # helper true flexi params
     true_params = shape(dofs)
@@ -64,6 +64,11 @@ function cd_flexi(dofs)
     params = collect(dofs:-1:1)   # explicit descending step
     return params / LinearAlgebra.norm(params)
 end
+
+function id_flexi(dofs)
+    params = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(dofs)
+    return params
+end    
 
 # # test: passed
 # function make_flexi1_func(dofs; shape = crooked_flexi)
