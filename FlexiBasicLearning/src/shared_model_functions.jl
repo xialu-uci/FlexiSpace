@@ -36,7 +36,7 @@ function derepresent_all(p_repr_all, model::AbstractFlexiModel)  # not using at 
     return ComponentArray(result_dict)
 end
 
-function derepresent_all(p_repr_all, model::AbstractBasicFlexiModel)  # not using at all yet
+function derepresent_all(p_repr_all, model::AbstractFlexiBasicModel)  # not using at all yet
     return p_repr_all # flexi params are inherently repru, p_repr
 end
 
