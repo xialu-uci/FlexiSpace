@@ -16,7 +16,7 @@ end
 function make_ModelMixedLV(;flexi_dofs=5, reltol = 1e-8, abstol = 1e-8)
    
     p_classical_derepresented_ig = ComponentArray(
-        a = 1.2
+        a = 1.0 
     )
 
     p_derepresented_lowerbounds = ComponentArray(
