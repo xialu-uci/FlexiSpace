@@ -36,6 +36,10 @@ function derepresent_all(p_repr_all, model::AbstractFlexiModel)  # not using at 
     return ComponentArray(result_dict)
 end
 
+function derepresent_all(p_repr_all, model::AbstractBasicFlexiModel)  # not using at all yet
+    return p_repr_all # flexi params are inherently repr
+end
+
 # Template-based reconstruction functions for classical models
 # function reconstruct_learning_params_from_array(classical_params_array, p_repr_all, model::AbstractClassicalModel)
 #     keys_list = collect(keys(p_repr_all.p_classical))

@@ -7,6 +7,7 @@ function get_loss(params; learning_problem::LearningProblem{M}, gradient_mode = 
     # println(size(y))
     # println("params $params")
     # println("is y_pred >1")
+    params = FlexiBasicLearning.derepresent_all(params, learning_problem.model)
     y_pred = fw(x, params, learning_problem.model; gradient_mode = gradient_mode)
     # println(y_pred === nothing)
     # println(y_pred === nothing ? "nothing" : size(y_pred))

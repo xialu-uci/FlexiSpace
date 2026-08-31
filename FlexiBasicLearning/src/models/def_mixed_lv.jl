@@ -13,7 +13,7 @@ struct ModelMixedLV <: AbstractFlexiModel
     
 end
 
-function make_ModelMixedLV(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8)
+function make_ModelMixedLV(;flexi_dofs=5, reltol = 1e-8, abstol = 1e-8)
    
     p_classical_derepresented_ig = ComponentArray(
         a = 1.2
@@ -59,7 +59,7 @@ end
 
 function make_rhs(model::ModelMixedLV; gradient_mode = false)
     function rhs(du, u, params_derepr, t)
-        a = params_derepr.p_classical
+        a = params_derepr.p_classical.a
         x, y = u
         # println(x)
         x_mod = x/(x+1)
