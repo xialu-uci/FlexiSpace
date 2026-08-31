@@ -143,29 +143,6 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
 end
     
 
-# function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8)
-#     f = y ->  FlexiFunctions.evaluate_decompress(y, params) # dy/dx = f(y)
-#     dydx(y, p, x) = f(y)  # out-of-place form; y and x are scalars here
-
-#     prob = ODEProblem(dydx, 0.1, (0.0, 1.0))  # y(0) = 0, integrate x in [0,1]
-#     sol = solve(prob, alg; reltol = reltol, abstol = abstol)
-
-#     return x -> sol(x)  # callable, returns interpolated y(x)
-# end
-
-# small_data = sim_data(10, 5)
-
-# NUM_POINTS = 100
-# DOFS = 5
-
-# crooked
-# sim_data(NUM_POINTS, DOFS; save_name = "sim_data_crooked_5seg.jld2")
-
-# cu 
-# sim_data(NUM_POINTS, DOFS; shape = cu_flexi, save_name = "sim_data_cu_5seg.jld2")
-
-# # cd 
-# sim_data(NUM_POINTS, DOFS; shape = cd_flexi, save_name = "sim_data_cd_5seg.jld2")
 
 # naming convention
 # --- naming helpers ---
@@ -207,6 +184,8 @@ function shape_name(s)
     error("Unknown shape: $s")
 end
 
+
+
 # func-#dof-#obs/sim_data_shape
 
 # comment out so it doesn't resave data every instantiation.
@@ -227,16 +206,16 @@ end
 
 # funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
 
-num_points = [40]
-dofs = [4]
-skeys = ["id"]
-funcs = [FlexiBasicLearning.make_flexi1_lv_func]
+# num_points = [40]
+# dofs = [4]
+# skeys = ["id"]
+# funcs = [FlexiBasicLearning.make_flexi1_lv_func]
 
 
-for n in num_points, f in funcs, d in dofs, sname in skeys
-    fname = func_name(f)
-    s        = FlexiBasicLearning.shapes[sname]
-    save_name = joinpath("w_true_params_flexi_args/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
-    sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
-end
+# for n in num_points, f in funcs, d in dofs, sname in skeys
+#     fname = func_name(f)
+#     s        = FlexiBasicLearning.shapes[sname]
+#     save_name = joinpath("w_true_params_flexi_args/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+#     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+# end
 

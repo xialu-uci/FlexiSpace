@@ -118,3 +118,37 @@ function check_parameter_bounds(best_p, model, model_name, dataset_desc)
     
     return violations
 end
+
+## making ig guesses 
+
+function choose_near_ig(gt_flexi::AbstractVector{Float64} , model::AbstractModel; dist = 0.0, dir = "cu")
+    dof = length(gt_flexi)
+     v = zeros(dof)
+    if dir == "cu"
+       v[end] = dof
+    elseif dir == "cd"
+        v[1] = dof
+    end
+    ig = (1.0 - dist) * gt_flexi + dist * v
+    return ig
+    
+    # gt_flexi should just be flexi params
+    # dist... how far away to go...
+    # perturb ig a little bit (must still abide by rules of )
+end
+
+function choose_near_ig(gt_derepr::ComponentArray{Float64},  model::AbstractFlexiModel; cdist = 0.0, fdist = 0.0, fdir = "cu")
+    # grab params
+    gt_classical = gt_derepr.p_classical
+    gt_flexi = gt_derepr.flex1_params
+
+    ig_classical = (1.0 + cdist) * gt_classical
+    ig_flexi = choose_near_ig(gt_flexi, model; dist = fdist, dir = fdir)
+    ig = ComponentArray(
+        p_classical = ig_classical,
+        flex1_params = ig_flexi
+    )
+    # gt_derepr should have flex1_params and p_classical
+    # dist... how far away to go...
+    # perturb ig a little bit (must still abide by rules of )
+end
