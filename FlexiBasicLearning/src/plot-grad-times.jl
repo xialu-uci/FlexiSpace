@@ -3,7 +3,7 @@ using DataFrames
 using CairoMakie
 using Statistics
 
-expdir_base = "../FlexiSpaceLocal/exp/08132026/fixed-gts"
+expdir_base = "../FlexiSpaceLocal/exp/grad-comp-timing/08302026/fixed-gts"
 
 const NUM_FIXED = 32
 const METRIC = :mean_grad_time
@@ -37,11 +37,11 @@ function plot_metric_vs_num_by_shape_modes(dfs_by_mode, modes, func_form, fixed_
     colors = color_for(all_shapes)
 
     fig = Figure(size = (380 * length(modes) + 150, 500))
-    axes = Axis[]
+    axes = CairoMakie.Axis[]
 
     for (i, mode) in enumerate(modes)
         sub = subs[mode]
-        ax = Axis(fig[2, i], xlabel = "$x_num", ylabel = i == 1 ? metric_label : "",
+        ax = CairoMakie.Axis(fig[2, i], xlabel = "$x_num", ylabel = i == 1 ? metric_label : "",
                   title = mode, xscale = log10, yscale = log10)
         push!(axes, ax)
         isempty(sub) && continue
@@ -77,11 +77,11 @@ function plot_metric_vs_num_by_func_modes(dfs_by_mode, modes, shape, fixed_num, 
     colors = color_for(all_funcs)
 
     fig = Figure(size = (380 * length(modes) + 150, 500))
-    axes = Axis[]
+    axes = CairoMakie.Axis[]
 
     for (i, mode) in enumerate(modes)
         sub = subs[mode]
-        ax = Axis(fig[2, i], xlabel = "$x_num", ylabel = i == 1 ? metric_label : "",
+        ax = CairoMakie.Axis(fig[2, i], xlabel = "$x_num", ylabel = i == 1 ? metric_label : "",
                   title = mode, xscale = log10, yscale = log10)
         push!(axes, ax)
         isempty(sub) && continue

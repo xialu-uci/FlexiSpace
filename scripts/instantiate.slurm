@@ -1,15 +1,15 @@
 #!/bin/bash
 
 #SBATCH --job-name=flexi-instantiate  ## job name
-#SBATCH -p free              ## use free partition
-#SBATCH --cpus-per-task=4 ## (-c) number of cpus to allocate (PER ARRAY JOB)
+#SBATCH -A jallard_lab     ## account to charge
+#SBATCH --partition=standard  #SBATCH --cpus-per-task=4 ## (-c) number of cpus to allocate (PER ARRAY JOB)
 #SBATCH --mem=16G  # Use all available memory on the node
 #SBATCH --array=1-1 ## number of array tasks
 #SBATCH --ntasks=1 ## (-n) number of tasks to launch (PER ARRAY JOB)
 #SBATCH --constraint=intel  # Use Intel nodes hopefully prevents some of the cache issues
 #SBATCH --error=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.err    ## Slurm error  file, %x - job name, %A job id 
 #SBATCH --output=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.out      ## Slurm output file, %x - job name, %A job id
-#SBATCH --time=0-00:30:00 # Maximum time.
+#SBATCH --time=0-01:00:00 # Maximum time.
 
 # hpc3 environment
 module load julia-1.12.5

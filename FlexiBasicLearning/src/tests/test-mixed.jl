@@ -14,3 +14,5 @@ my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strate
 ig = my_model.params_repr_ig
 
 result = FlexiBasicLearning.bbo_learn(my_prob, ig) # ok yay loss goes down  
+
+#
