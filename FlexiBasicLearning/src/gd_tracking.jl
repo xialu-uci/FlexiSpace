@@ -40,7 +40,7 @@ function dist(u,v)
     return LinearAlgebra.norm(u-v)
 end
 
-function plot_gd_tracker(gd_tracker, alg, savedir)
+function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing)
     iters = 1:length(gd_tracker.norms)
 
     fig = Figure(size = (900, 900))
@@ -48,15 +48,50 @@ function plot_gd_tracker(gd_tracker, alg, savedir)
     ax1 = CairoMakie.Axis(fig[1, 1], ylabel = "‖grad‖", yscale = log10,
                title = "Gradient norm vs. $alg iteration")
     lines!(ax1, iters, gd_tracker.norms)
+    if !isnothing(flip_boundaries)
+        for boundary in flip_boundaries
+                CairoMakie.vlines!(ax1, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
+                 CairoMakie.text!(ax1, boundary, 10^0.5, 
+                                 text = "simplex", 
+                                 color = :red, 
+                                 fontsize = 10,
+                                 rotation = 90,
+                                 align = (:center, :bottom))
+            end
+    end
 
     ax2 = CairoMakie.Axis(fig[2, 1], ylabel = "grad ⋅ grad_true",
                title = "Normalized Gradient ⋅ Truth vs. $alg iteration")
     lines!(ax2, iters, gd_tracker.dots)
     hlines!(ax2, [0.0], color = :gray, linestyle = :dash)
+    if !isnothing(flip_boundaries)
+        for boundary in flip_boundaries
+                CairoMakie.vlines!(ax2, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
+                 CairoMakie.text!(ax2, boundary, 10^0.5, 
+                                 text = "simplex", 
+                                 color = :red, 
+                                 fontsize = 10,
+                                 rotation = 90,
+                                 align = (:center, :bottom))
+            end
+    end
 
     ax3 = CairoMakie.Axis(fig[3, 1], xlabel = "iteration", ylabel = "‖u - u_true‖",
                yscale = log10, title = "Distance to true parameters vs. $alg iteration")
+    if !isnothing(flip_boundaries)
+        for boundary in flip_boundaries
+                CairoMakie.vlines!(ax3, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
+                CairoMakie.text!(ax3, boundary, 10^0.5, 
+                                 text = "simplex", 
+                                 color = :red, 
+                                 fontsize = 10,
+                                 rotation = 90,
+                                 align = (:center, :bottom))
+            end
+    end
     lines!(ax3, iters, gd_tracker.dists)
+
+    
 
     save(joinpath(savedir, "gd_tracker_$alg.png"), fig)
     return fig

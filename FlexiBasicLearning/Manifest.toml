@@ -2,7 +2,7 @@
 
 julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "fcecf3ac86372610d23bb4bc96c0c2aafc2bcdb5"
+project_hash = "128c94adc112029a9c9b24c1aa9e9b017d106761"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "d9aaef7c63466eee4de23b4d9dad03629df54bea"
@@ -1618,6 +1618,24 @@ git-tree-sha1 = "b3f76b463c7998473062992b246045e6961a074e"
 uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
 version = "8.0.0"
 
+[[deps.NLopt]]
+deps = ["CEnum", "NLopt_jll"]
+git-tree-sha1 = "624785b15005a0e0f4e462b27ee745dbe5941863"
+uuid = "76087f3c-5699-56af-9a33-bf431cd00edd"
+version = "1.2.1"
+
+    [deps.NLopt.extensions]
+    NLoptMathOptInterfaceExt = ["MathOptInterface"]
+
+    [deps.NLopt.weakdeps]
+    MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+
+[[deps.NLopt_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "afe9c70ead884bf4cbb887f188d2db6d8f09d49c"
+uuid = "079eb43e-fd8e-5478-9966-2cf3e3edb778"
+version = "2.11.0+0"
+
 [[deps.NNlib]]
 deps = ["Adapt", "Atomix", "ChainRulesCore", "GPUArraysCore", "KernelAbstractions", "LinearAlgebra", "Random", "ScopedValues", "Statistics"]
 git-tree-sha1 = "446a44652d12ea0a70cbb6f7a9a00ca314ad784a"
@@ -1902,6 +1920,12 @@ deps = ["Evolutionary", "OptimizationBase", "Reexport", "SciMLBase"]
 git-tree-sha1 = "16e2489256567784d853d729b09e2170565bdd9d"
 uuid = "cb963754-43f6-435e-8d4b-99009ff27753"
 version = "0.4.9"
+
+[[deps.OptimizationNLopt]]
+deps = ["NLopt", "OptimizationBase", "Random", "SciMLBase", "SciMLLogging"]
+git-tree-sha1 = "2263c7326f64c57caa80e877f3a1533ef5474205"
+uuid = "4e6fcdb7-1186-4e1f-a706-475e75c168bb"
+version = "0.3.16"
 
 [[deps.OptimizationOptimJL]]
 deps = ["Optim", "OptimizationBase", "Reexport", "SciMLBase", "SparseArrays"]

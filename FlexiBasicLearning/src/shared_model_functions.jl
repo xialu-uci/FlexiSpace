@@ -19,21 +19,40 @@ end
 #     return ComponentArray(p_classical=derepresent(p_repr_all.p_classical, intPoints, model))
 # end
 
-function derepresent_all(p_repr_all, model::AbstractFlexiModel)  # not using at all yet
-    result_dict = Dict{Symbol, Any}(
-        :p_classical => derepresent(p_repr_all.p_classical, model)
+# function derepresent_all(p_repr_all, model::AbstractFlexiModel)
+#     # println(p_repr_all.p_classical)
+#     p_classical_derepr = derepresent(p_repr_all.p_classical, model)
+
+#     if haskey(p_repr_all, :flex2_params)
+#         return ComponentArray(p_classical = p_classical_derepr,
+#                                flex1_params = p_repr_all.flex1_params,
+#                                flex2_params = p_repr_all.flex2_params)
+#     elseif haskey(p_repr_all, :flex1_params)
+#         return ComponentArray(p_classical = p_classical_derepr,
+#                                flex1_params = p_repr_all.flex1_params)
+#     else
+#         return ComponentArray(p_classical = p_classical_derepr)
+#     end
+# end
+# Update derepresent_all to handle NamedTuples
+function derepresent_all(p_repr_all, model::AbstractFlexiModel)
+    p_classical_derepr = derepresent(p_repr_all.p_classical, model)
+    
+    # Build the result as a NamedTuple first
+    result = (
+        p_classical = p_classical_derepr,
     )
     
-    # Add flexi params that actually exist in the parameter structure
+    # Add flexi params
     if haskey(p_repr_all, :flex1_params)
-        result_dict[:flex1_params] = p_repr_all.flex1_params
+        result = merge(result, (flex1_params = p_repr_all.flex1_params,))
     end
-    
     if haskey(p_repr_all, :flex2_params)
-        result_dict[:flex2_params] = p_repr_all.flex2_params
+        result = merge(result, (flex2_params = p_repr_all.flex2_params,))
     end
     
-    return ComponentArray(result_dict)
+    # Only convert to ComponentArray at the very end, outside AD
+    return ComponentArray(result)
 end
 
 function derepresent_all(p_repr_all, model::AbstractFlexiBasicModel)  # not using at all yet
@@ -127,7 +146,7 @@ function choose_near_ig(gt_flexi::AbstractVector{Float64} , model::AbstractModel
     if dir == "cu"
        v[end] = dof
     elseif dir == "cd"
-        v[1] = dof
+        v[1] = 1.0
     end
     ig = (1.0 - dist) * gt_flexi + dist * v
     return ig

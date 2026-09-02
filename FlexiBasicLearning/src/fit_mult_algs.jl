@@ -193,7 +193,7 @@ function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
 end
 
 
-function make_loss_history_figs(all_loss_histories, all_times, labels)
+function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_boundaries = nothing)
     nx = 2
     n = length(all_loss_histories)
     ny = n ÷ nx + (n % nx > 0 ? 1 : 0)
@@ -205,7 +205,8 @@ function make_loss_history_figs(all_loss_histories, all_times, labels)
     for (i, (loss_history, time, label, color)) in enumerate(zip(all_loss_histories, all_times, labels, colors))
         row = (i - 1) ÷ nx + 1
         col = (i - 1) % nx + 1
-        ax = CairoMakie.Axis(fig[row, col], xlabel = "iteration", ylabel = "loss", title = "$label ($time s)", yscale = log10)
+        ax = CairoMakie.Axis(fig[row, col], xlabel = "iteration", ylabel = "loss", 
+                             title = "$label ($time s)", yscale = log10)
         CairoMakie.lines!(ax, loss_history, color = color, linewidth = 2)
 
         if i == 1
@@ -213,7 +214,21 @@ function make_loss_history_figs(all_loss_histories, all_times, labels)
         else
             CairoMakie.linkyaxes!(first_ax, ax)
         end
+        
+        # draw simplex boundaries for simplex gd
+        if !isnothing(simplex_boundaries) && !isnothing(simplex_boundaries[i])
+            for boundary in simplex_boundaries[i]
+                CairoMakie.vlines!(ax, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
+                CairoMakie.text!(ax, boundary, 10^0.5, 
+                                 text = "gd", 
+                                 color = :red, 
+                                 fontsize = 10,
+                                 rotation = 90,
+                                 align = (:center, :bottom))
+            end
+        end
     end
+
     return fig
 end
    

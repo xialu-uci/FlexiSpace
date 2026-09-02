@@ -9,6 +9,8 @@ using Printf
 using Optim, Optimization, OptimizationEvolutionary
 using OptimizationOptimJL
 using OptimizationBBO # This contains BBO Differential Evolution
+using OptimizationNLopt # This contains NLopt algorithms including LN_SBPLX
+import NLopt # For direct NLopt debugging in simplex.jl
 
 using Optimisers, Zygote
 using ChainRulesCore # can prob get rid of ChainRulesCore
@@ -61,6 +63,7 @@ include("learning_protocols/base.jl")
 include("learning_protocols/cmaes.jl")
 include("learning_protocols/grad_desc.jl")
 include("learning_protocols/diffevol.jl")
+include("learning_protocols/simplex.jl")
 
 # include functions for fitting and plotting
 include("fit_flexi.jl")

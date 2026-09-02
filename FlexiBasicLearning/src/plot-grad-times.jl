@@ -46,7 +46,7 @@ function plot_metric_vs_num_by_shape_modes(dfs_by_mode, modes, func_form, fixed_
         push!(axes, ax)
         isempty(sub) && continue
         for s in sort(unique(sub.shape))
-            ssub = sort(filter(r -> r.shape == s, sub), :dof)
+            ssub = sort(filter(r -> r.shape == s, sub), x_num)
             scatterlines!(ax, getproperty(ssub, x_num), getproperty(ssub, y_metric); color = colors[s])
         end
     end
@@ -86,7 +86,7 @@ function plot_metric_vs_num_by_func_modes(dfs_by_mode, modes, shape, fixed_num, 
         push!(axes, ax)
         isempty(sub) && continue
         for f in sort(unique(sub.func_form))
-            fsub = sort(filter(r -> r.func_form == f, sub), :dof)
+            fsub = sort(filter(r -> r.func_form == f, sub), x_num)
             scatterlines!(ax, getproperty(fsub, x_num), getproperty(fsub, y_metric); color = colors[f])
         end
     end
@@ -112,7 +112,8 @@ end
 modes = ["fw", "rv", "fd"]
 
 y_metrics = [:mean_grad_time, :median_grad_time, :n_grad_calls, :mean_grad_alloc, :median_grad_alloc]
-metric_labels = ["mean grad compute (s)", "median grad compute (s)", "number of grad calls in 10 iters"]
+metric_labels = ["mean grad compute (s)", "median grad compute (s)", "number of grad calls in 10 iters",
+                  "mean grad allocations (bytes)", "median grad allocations (bytes)"]
 x_nums = [:dof, :num_points]
 fixed_nums = [:num_points, :dof]
 

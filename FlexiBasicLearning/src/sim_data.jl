@@ -1,6 +1,7 @@
 # first let's simulate data with no noise (from Jun)
 using FlexiBasicLearning
 using JLD2
+using ComponentArrays
 # using OrdinaryDiffEqCore
 using OrdinaryDiffEq  
 # using SciMLBase
@@ -70,6 +71,14 @@ function id_flexi(dofs)
     return params
 end    
 
+# --- new shape: outputs a mixed ComponentArray(p_classical=(a=...), flex1_params=...) ---
+function mixed_id_flexi(dofs; a = 1.0)
+    return ComponentArray(
+        p_classical  = ComponentArray(a = a),
+        flex1_params = id_flexi(dofs),
+    )
+end
+
 # # test: passed
 # function make_flexi1_func(dofs; shape = crooked_flexi)
 #     params = shape(dofs)
@@ -101,6 +110,7 @@ function make_flexi1_alg1_func(params; for_sim = false)
 end
 
 
+
 function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8,
                                 x_max = 1e4, for_sim = false)
     f = y -> FlexiFunctions.evaluate_decompress(y, params)  # dy/dx = f(y)
@@ -122,13 +132,24 @@ end
 
 function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8,
                                 x_max = 1e2, for_sim = false, a = 1.0)
-    f = z -> FlexiFunctions.evaluate_decompress(z, params)  # expects arg in [0,1)
+    # params can be either:
+    #   - a bare flexi-params vector/ComponentArray (old style; `a` comes from the kwarg)
+    #   - a mixed ComponentArray(p_classical=(a=...,), flex1_params=...), e.g. from
+    #     mixed_id_flexi -- `a` is read out of params.p_classical.a, kwarg ignored
+    if params isa ComponentArray && haskey(params, :p_classical)
+        a = params.p_classical.a
+        flex_params = params.flex1_params
+    else
+        flex_params = params
+    end
+
+    f = z -> FlexiFunctions.evaluate_decompress(z, flex_params)  # expects arg in [0,1)
 
     function dydx(y, p, x)
         y1, y2 = y
-        y1_mod = y1 / (y1 + 1)               
+        y1_mod = y1 / (y1 + 1)
         dy1 = (y1 + 1) * f(y1_mod) - y1 * y2
-        dy2 = - a * y2 + y1 * y2
+        dy2 = -a * y2 + y1 * y2
         return [dy1, dy2]
     end
 
@@ -142,6 +163,7 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
     end
 end
     
+
 
 
 # naming convention
@@ -181,6 +203,7 @@ function shape_name(s)
     s === crooked_flexi && return "crooked"
     s === cu_flexi       && return "cu"
     s === cd_flexi       && return "cd"
+    s === mixed_id_flexi  && return "mixed_id"
     error("Unknown shape: $s")
 end
 
@@ -215,7 +238,8 @@ end
 # for n in num_points, f in funcs, d in dofs, sname in skeys
 #     fname = func_name(f)
 #     s        = FlexiBasicLearning.shapes[sname]
-#     save_name = joinpath("w_true_params_flexi_args/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+#     save_name = joinpath("w_true_params_flexi_args/no-noise/$(fname)joinpath("w_true_params_flexi_args/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
 #     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
 # end
 
+sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")

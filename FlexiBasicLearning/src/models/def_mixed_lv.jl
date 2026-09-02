@@ -16,7 +16,7 @@ end
 function make_ModelMixedLV(;flexi_dofs=5, reltol = 1e-8, abstol = 1e-8)
    
     p_classical_derepresented_ig = ComponentArray(
-        a = 1.0 
+        a = 1.0
     )
 
     p_derepresented_lowerbounds = ComponentArray(
@@ -48,8 +48,8 @@ function make_ModelMixedLV(;flexi_dofs=5, reltol = 1e-8, abstol = 1e-8)
        p_classical_derepresented_ig,
        p_derepresented_lowerbounds,
        p_derepresented_upperbounds,
-       params_derepresented_ig,
        params_repr_ig,
+       params_derepresented_ig,
        u0,
        reltol,
        abstol)
@@ -94,17 +94,50 @@ function fw(x::AbstractVector, params, model::ModelMixedLV; gradient_mode = fals
     return y
 end
 
-function represent_on_type(p_classical_derepresented,  model_by_type::Type{ModelMixedLV})
-    # initial transformations, subject to change
-   return  ComponentArray(
-        a=log(p_classical_derepresented.a),  # log
-   )
-end
+# function represent_on_type(p_classical_derepresented,  model_by_type::Type{ModelMixedLV})
+#     # initial transformations, subject to change
+#    return  ComponentArray(
+#         a=log.(p_classical_derepresented),  # log
+#    )
+# end
     
 
 
-function derepresent(p_classical_represented, model::ModelMixedLV)
-    return  ComponentArray(
-        a=exp(p_classical_represented.a),  # log
-   )
+# # function derepresent(p_classical_represented, model::ModelMixedLV)
+# #     println(p_classical_represented)
+# #     return  ComponentArray(
+# #         a=exp(p_classical_represented.a),  # log
+# #    )
+# # end
+
+# function derepresent(p_classical_represented, model::ModelMixedLV)
+#     println(p_classical_represented)
+#     # Use Val for symbolic indexing
+#     a_val = exp(p_classical_represented[Val(:a)])
+#     return ComponentArray(; a=a_val)
+# end
+
+# try: for zygote
+function represent_on_type(p_classical_derepresented, model_by_type::Type{ModelMixedLV})
+    # This should NOT create a ComponentArray that will be differentiated
+    # Return a plain Array or NamedTuple instead
+    return (
+        a = log.(p_classical_derepresented.a),
+    )
 end
+
+function derepresent(p_classical_represented, model::ModelMixedLV)
+    # println(p_classical_represented)
+    
+    # If p_classical_represented is a NamedTuple or plain Array
+    if p_classical_represented isa NamedTuple
+        a_val = exp(p_classical_represented.a)
+        return (a = a_val,)  # Return NamedTuple, not ComponentArray
+    else
+        # If it's a ComponentArray, use Val
+        a_val = exp(p_classical_represented[Val(:a)])
+        return (a = a_val,)
+    end
+end
+
+

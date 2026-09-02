@@ -24,6 +24,7 @@ function bbo_learn(learning_problem, p_repr_ig)
 
     # algo is the optimization algorithm (here bbo)
     # maxiters is maximum iterations
+    # maxiters = 10 # j checking something
     maxiters = 300000 # not reduced for testing?
     # callback is a function called at each iteration, s.t. optimzation stops if it returns true
     config = CallbackConfig() # just stores info for callback function in fields
