@@ -144,7 +144,7 @@ function choose_near_ig(gt_flexi::AbstractVector{Float64} , model::AbstractModel
     dof = length(gt_flexi)
      v = zeros(dof)
     if dir == "cu"
-       v[end] = dof
+       v[end] = 1.0
     elseif dir == "cd"
         v[1] = 1.0
     end
