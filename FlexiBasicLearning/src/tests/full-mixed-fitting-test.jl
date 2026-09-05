@@ -218,11 +218,11 @@ savedir_base = "../FlexiSpaceLocal/exp/09012026/mixed-lv"
 
 all_near_results = []
 
-dist_list = [0.0, 0.05, 0.5]
-dir_list = ["cu", "cd"]
-savedir_base = "../FlexiSpaceLocal/exp/09012026/mixed-lv"
+# dist_list = [0.0, 0.05, 0.5]
+# dir_list = ["cu", "cd"]
+# savedir_base = "../FlexiSpaceLocal/exp/09022026/mixed-lv"
 
-all_near_results = []
+# all_near_results = []
 
 for dist in dist_list
     for dir in dir_list
