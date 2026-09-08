@@ -1,4 +1,4 @@
-#should be able to delete soon
+#TODO: should be able to delete soon
 
 # # 01_run_fits.jl
 # # Sweeps over function form, dof, shape, and num_points; runs fit_cmaes_and_gd

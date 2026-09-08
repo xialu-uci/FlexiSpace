@@ -5,7 +5,7 @@ using ComponentArrays
 # using OrdinaryDiffEqCore
 using OrdinaryDiffEq  
 # using SciMLBase
-#TODO: modify to include flexi_args in datafile
+#TODO: execute outside of src
 
 function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
 
