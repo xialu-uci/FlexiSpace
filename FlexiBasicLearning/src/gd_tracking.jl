@@ -4,6 +4,8 @@
 using FlexiBasicLearning
 using CairoMakie
 
+# TODO: make separate tracking and plotting files
+
 function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     # load datafile from results_all_ig
     datafile = results_all_ig[1]["datafile"] # datafile is the same for all results in results_all_ig
@@ -77,7 +79,10 @@ function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing)
     end
 
     ax3 = CairoMakie.Axis(fig[3, 1], xlabel = "iteration", ylabel = "‖u - u_true‖",
-               yscale = log10, title = "Distance to true parameters vs. $alg iteration")
+            yscale = log10, title = "Distance to true parameters vs. $alg iteration")
+
+    nonzero = gd_tracker.dists .> 0
+    lines!(ax3, iters[nonzero], gd_tracker.dists[nonzero])
     if !isnothing(flip_boundaries)
         for boundary in flip_boundaries
                 CairoMakie.vlines!(ax3, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
@@ -89,7 +94,7 @@ function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing)
                                  align = (:center, :bottom))
             end
     end
-    lines!(ax3, iters, gd_tracker.dists)
+    # lines!(ax3, iters, gd_tracker.dists)
 
     
 

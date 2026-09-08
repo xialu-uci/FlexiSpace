@@ -242,4 +242,4 @@ end
 #     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
 # end
 
-sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")
+# sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")

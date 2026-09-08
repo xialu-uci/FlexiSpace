@@ -3,6 +3,7 @@ using FlexiBasicLearning
 using CairoMakie
 using LinearAlgebra
 
+#TODO: move out of src
 # just edited remote to have "main" as default branch. Edit to check if push/pulling to intended places.
 # ------------------------------------------------------------------
 # Static config (shared across all jobs)

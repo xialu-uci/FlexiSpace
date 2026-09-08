@@ -55,6 +55,26 @@ function derepresent_all(p_repr_all, model::AbstractFlexiModel)
     return ComponentArray(result)
 end
 
+function represent_all(p_derepr_all, model::AbstractFlexiModel)
+    p_classical_repr = represent(p_derepr_all.p_classical, model)
+    
+    # Build the result as a NamedTuple first
+    result = (
+        p_classical = p_classical_repr,
+    )
+    
+    # Add flexi params
+    if haskey(p_derepr_all, :flex1_params)
+        result = merge(result, (flex1_params = p_derepr_all.flex1_params,))
+    end
+    if haskey(p_derepr_all, :flex2_params)
+        result = merge(result, (flex2_params = p_derepr_all.flex2_params,))
+    end
+    
+    # Only convert to ComponentArray at the very end, outside AD
+    return ComponentArray(result)
+end
+
 function derepresent_all(p_repr_all, model::AbstractFlexiBasicModel)  # not using at all yet
     return p_repr_all # flexi params are inherently repru, p_repr
 end

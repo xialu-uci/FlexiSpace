@@ -3,6 +3,7 @@ using FlexiBasicLearning
 using CairoMakie
 using LinearAlgebra
 
+#TODO: move outside of 
 # ------------------------------------------------------------------
 # Static config -- must match fit_single.jl exactly
 # ------------------------------------------------------------------

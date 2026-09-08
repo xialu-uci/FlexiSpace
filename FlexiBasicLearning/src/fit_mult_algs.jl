@@ -264,6 +264,45 @@ function fit_all_algs(datafile, savedir, make_model;
     # end
 end
    
+
+# copied over from mixed test
+function plot_flexi_history_ode(parameter_history, alg, savedir, datafile, true_flexi_params; n_intermediate = 10)
+    # parameter_history entries are the full struct (p_classical + flex1_params);
+    # this panel only cares about the flexi-function slice
+    parameter_history = [p.flex1_params for p in parameter_history]
+
+    @load datafile flexi_args
+
+    ig = parameter_history[1]
+    best = parameter_history[end]
+    n_best = length(parameter_history)
+    log_idxs = exp.(range(log(2), log(max(n_best - 1, 2)), length = n_intermediate))
+    inter_idxs = unique(round.(Int, log_idxs))
+    intermediates = parameter_history[inter_idxs]
+
+    params_list = vcat([ig], intermediates, [best], [true_flexi_params])
+    param_labels = vcat(["initial guess"], ["iter $(i)" for i in inter_idxs], ["best fit"], ["ground truth"])
+    cmap = Makie.cgrad(:blues, max(length(intermediates), 1), categorical = true)
+    colors = vcat([:green], [cmap[i] for i in 1:length(intermediates)], [:indigo], [:black])
+    styles = vcat([:solid], fill(:dash, length(intermediates)), [:solid], [:dot])
+
+    xs_flexi = range(0.0, 1.0, length = 500)
+    fig = Figure(size = (800, 600))
+    ax = CairoMakie.Axis(fig[1, 1], xlabel = "x", ylabel = "f(x)",
+        title = "Pipeline flexi-function history ($alg)")
+
+    for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
+        ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]
+        lines!(ax, xs_flexi, ys; label = label, color = color, linestyle = style)
+    end
+    
+    CairoMakie.vlines!(ax, flexi_args, label = "flexi arg spacing", color = (:gray, 0.6))
+    axislegend(ax, position = :rt)
+
+    save(joinpath(savedir, "pipeline_flexi_history_$alg.png"), fig)
+    return fig
+end
+
 # test 1: not entering ig should use default ig from model
 # test 2: entering 1 ig should use that ig
 # test 3: entering multiple igs should run multiple fits and return a list of results

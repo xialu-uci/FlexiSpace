@@ -22,6 +22,7 @@ using CairoMakie
 
 # print(true_params)
 # # fit with cmaes and gd
+#TODO: not currently using any of this
 
 function loss_arc(i, true_params, learning_problem, savedir; plot = true)
     # plot loss as a function of param i, with param j determined by
