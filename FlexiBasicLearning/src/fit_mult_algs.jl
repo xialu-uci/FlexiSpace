@@ -269,8 +269,8 @@ end
 function plot_flexi_history_ode(parameter_history, alg, savedir, datafile, true_flexi_params; n_intermediate = 10)
     # parameter_history entries are the full struct (p_classical + flex1_params);
     # this panel only cares about the flexi-function slice
-    parameter_history = [p.flex1_params for p in parameter_history]
-
+    # parameter_history = [p.flex1_params for p in parameter_history] # TODO: make compatible with not mixed 
+    parameter_history = [p for p in parameter_history] # TODO: make compatible with not mixed
     @load datafile flexi_args
 
     ig = parameter_history[1]
@@ -289,7 +289,7 @@ function plot_flexi_history_ode(parameter_history, alg, savedir, datafile, true_
     xs_flexi = range(0.0, 1.0, length = 500)
     fig = Figure(size = (800, 600))
     ax = CairoMakie.Axis(fig[1, 1], xlabel = "x", ylabel = "f(x)",
-        title = "Pipeline flexi-function history ($alg)")
+        title = "Flexi-function history ($alg)")
 
     for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
         ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]

@@ -25,8 +25,12 @@ function gradient_descent_learn(learning_problem, ig;
     # timing
     t0 = Base.time()
 
-    function flexi_loss(params, p)
-       
+    function flexi_loss(flexi_params, p)
+        # TODO: make this compatible with the unmixed models too
+        params = ComponentArray(
+            p_classical = ig.p_classical,
+            flex1_params = flexi_params
+        )
         loss = get_loss(params; learning_problem=learning_problem, gradient_mode=true)
     
        return loss
@@ -133,12 +137,12 @@ function gradient_descent_learn(learning_problem, ig;
     if config.time_grads
         optf = Optimization.OptimizationFunction(flexi_loss; grad = counted_grad!)
     else
-        optf = Optimization.OptimizationFunction(flexi_loss, Optimization.AutoZygote())
+        optf = Optimization.OptimizationFunction(flexi_loss, Optimization.AutoForwardDiff())
     end
 
-    
+    flexi_ig = collect(ig.flex1_params) 
 
-    prob = Optimization.OptimizationProblem(optf, ig) 
+    prob = Optimization.OptimizationProblem(optf, flexi_ig) 
 
     opt_alg = build_optimizer(optimizer; learning_rate=learning_rate, linesearch=linesearch)
 
@@ -155,7 +159,12 @@ function gradient_descent_learn(learning_problem, ig;
 
     time = Base.time() - t0
     println("Gradient descent ($optimizer) time: $time")
-    result = (fit_params = best_params[], loss_history = loss_history, optimizer = optimizer, time = time,
+
+    fit_params = ComponentArray(
+        p_classical = ig.p_classical,
+        flex1_params = best_params[]
+    )
+    result = (fit_params = fit_params, loss_history = loss_history, optimizer = optimizer, time = time,
             gradient_history = config.save_parameters ? gradient_history : nothing,
             parameter_history = config.save_parameters ? parameter_history : nothing,
             num_grad_evals = config.time_grads ? grad_eval_count[] : nothing,
