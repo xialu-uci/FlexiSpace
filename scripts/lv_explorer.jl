@@ -138,56 +138,6 @@ end
 
 # save results, loss_landscapes, a_guesses to savedir to reload and plot later
 @save joinpath(savedir, "results_landscapes_guesses.jld2") results loss_landscapes a_guesses
-#TODO: modify to plot 5 loss landscapes for each a_result.fit.flex1_params
-# mark the global minimum of each landscape ith a star (color i)
-# mark local minima of each landscape with a circle (color i, faded)
-# mark the a_guess used for bfgs with a vertical dashed line (color i, faded)
-
-# plotting
-
-# --- Fig 1: loss vs a landscape(s) --
-
-# fig1 = Figure(size = (900, 600))
-# ax1 = CairoMakie.Axis(fig1[1, 1],
-#     xlabel = "a",
-#     ylabel = "loss",
-#     yscale = log10,
-#     title = "Loss landscape vs. a"
-# )
-
-# # original landscape (flex1_params = id)
-# lines!(ax1, a_loss_landscape.a_grid, a_loss_landscape.loss_values,
-#     color = :steelblue, label = "flex1_params = id")
-
-# # mark all detected local minima on the original landscape
-# scatter!(ax1, a_loss_landscape.a_grid[a_loss_landscape.local_min_idxs],
-#     a_loss_landscape.loss_values[a_loss_landscape.local_min_idxs],
-#     color = :orange, markersize = 12, marker = :circle,
-#     label = "local minima")
-
-# # mark global minimum
-# scatter!(ax1, [a_loss_landscape.a_grid[a_global_min_idx]],
-#     [a_loss_landscape.loss_values[a_global_min_idx]],
-#     color = :red, markersize = 16, marker = :star5,
-#     label = "global minimum")
-
-# # mark chosen a_local_min explicitly
-# vlines!(ax1, [a_local_min], color = :orange, linestyle = :dash,
-#     label = "chosen a_local_min = $(round(a_local_min, digits=3))")
-
-# # refit landscape (flex1_params = fit.flex1_params)
-# lines!(ax1, a1_loss_landscape.a_grid, a1_loss_landscape.loss_values,
-#     color = :green, label = "flex1_params = fit")
-
-# a1_global_min_idx = argmin(a1_loss_landscape.loss_values)
-# scatter!(ax1, [a1_loss_landscape.a_grid[a1_global_min_idx]],
-#     [a1_loss_landscape.loss_values[a1_global_min_idx]],
-#     color = :purple, markersize = 16, marker = :star5,
-#     label = "global minimum (fit)")
-
-# axislegend(ax1, position = :rb)
-
-# save(joinpath(savedir, "loss_vs_a.png"), fig1)
 
 # --- Plotting: baseline (id) landscape + 5 round landscapes overlaid ---
 

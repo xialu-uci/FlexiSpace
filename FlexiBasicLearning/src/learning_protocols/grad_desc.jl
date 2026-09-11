@@ -163,7 +163,7 @@ function gradient_descent_learn(learning_problem, ig;
     fit_params = ComponentArray(
         p_classical = ig.p_classical,
         flex1_params = best_params[]
-    )
+    ) # TODO: make this compatible with unmixed models too
     result = (fit_params = fit_params, loss_history = loss_history, optimizer = optimizer, time = time,
             gradient_history = config.save_parameters ? gradient_history : nothing,
             parameter_history = config.save_parameters ? parameter_history : nothing,
