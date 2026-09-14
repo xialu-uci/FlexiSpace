@@ -53,8 +53,18 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     best_flexi_params = nothing
     
 
-    function flexi_loss(params, p)
-       return FlexiBasicLearning.get_loss(params; learning_problem=learning_problem)
+    # function flexi_loss(params, p)
+    #    return FlexiBasicLearning.get_loss(params; learning_problem=learning_problem)
+    # end
+    function flexi_loss(flexi_params, p)
+        # TODO: make this compatible with the unmixed models too
+        params = ComponentArray(
+            p_classical = ig.p_classical,
+            flex1_params = flexi_params
+        )
+        loss = get_loss(params; learning_problem=learning_problem, gradient_mode=true)
+    
+       return loss
     end
 
     # Evaluate initial guess
@@ -113,7 +123,10 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     lb = 0.0*fill(flexi_bound, length(ig));#-1.0*fill(flexi_bound, length(ig))
     ub = +1.0*fill(flexi_bound, length(ig))
 
-    prob = Optimization.OptimizationProblem(optf, ig, [1.0, 100.0]; lb=lb, ub=ub)
+    # define ig as flexi only
+    flexi_ig = collect(ig.flex1_params) 
+
+    prob = Optimization.OptimizationProblem(optf, flexi_ig, [1.0, 100.0]; lb=lb, ub=ub) # now only train on flexi
 
     # BELOW: protocol dependencies
     # Build CMAES options with hyperparameters
