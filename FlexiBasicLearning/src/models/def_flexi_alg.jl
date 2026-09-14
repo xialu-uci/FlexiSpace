@@ -36,5 +36,5 @@ function make_ModelFlexiAlg(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8) # for c
 end
 
 function fw(x::AbstractVector, params, model::ModelFlexiAlg; gradient_mode = false)
-    return x .* FlexiFunctions.evaluate_decompress.(x, Ref(params); gradient_mode=gradient_mode)
+    return x .* FlexiFunctions.evaluate_decompress.(x, Ref(params.flex1_params); gradient_mode=gradient_mode)
 end
