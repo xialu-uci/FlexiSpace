@@ -24,7 +24,7 @@ function ig_fit_all_algs(datafile, savedir, make_model;
     
     my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
     if isnothing(ig)
-        ig = deepcopy(my_model.params)
+        ig = deepcopy(my_model.params_repr_ig)
     end
     
     # save to savedir

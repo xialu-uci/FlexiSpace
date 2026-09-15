@@ -15,13 +15,15 @@ function make_ModelFlexiLV(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8)
  
     
     # params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
+    p_classical = ComponentArray(a = 0.0) # not used (here for compatibility)
+
     flex1_params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
     params_repr_ig = ComponentArray(
-        p_classical = nothing,
+        p_classical = p_classical,
         flex1_params = flex1_params
     )
     params_derepresented_ig = ComponentArray(
-        p_classical = nothing,
+        p_classical = p_classical,
         flex1_params = deepcopy(flex1_params)
     ) # for compatibility with other models, but not really used for this model
     
