@@ -4,7 +4,7 @@
 using FlexiBasicLearning
 using CairoMakie
 
-# TODO: make separate tracking and plotting files
+# TODO: this most certainly breaks with the parameter structure change, need to update to use the new parameter structure
 
 function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     # load datafile from results_all_ig

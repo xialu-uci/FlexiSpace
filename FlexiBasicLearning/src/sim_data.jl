@@ -7,10 +7,10 @@ using OrdinaryDiffEq
 # using SciMLBase
 #TODO: execute outside of src
 
-function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
+function sim_data(num_points, dofs; std = 0.05, a = 1.0, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
 
     # helper true flexi params
-    true_params = shape(dofs)
+    true_params = shape(dofs; a = a)
     # true_func = func_form(dofs; shape = shape)
 
     x_max, true_func, flexi_arg_func = func_form(true_params; for_sim = true)
@@ -47,7 +47,7 @@ end
 # println(params)
 
 # flexi shapes
-function crooked_flexi(dofs)
+function crooked_flexi(dofs; a =1.0)
     params = zeros(dofs)
     # make all odd indices 1
     params[1:2:end] .= 1.0
@@ -56,17 +56,17 @@ function crooked_flexi(dofs)
 end
 
 # TODO: something looks weird about gt flexi for y' = flexi(y) with dofs = 3 for cu and cd shapes.
-function cu_flexi(dofs) 
+function cu_flexi(dofs; a = 1.0)
     params = collect(1:dofs)
     return params / LinearAlgebra.norm(params)
 end
 
-function cd_flexi(dofs)
+function cd_flexi(dofs; a = 1.0)
     params = collect(dofs:-1:1)   # explicit descending step
     return params / LinearAlgebra.norm(params)
 end
 
-function id_flexi(dofs)
+function id_flexi(dofs; a = 1.0)
     params = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(dofs)
     return params
 end    

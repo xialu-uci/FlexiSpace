@@ -6,6 +6,7 @@ using Random
 
 #load crooked sim data
 
+#TODO: does change to param structure break this? I don't think so, but check
 # datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
 
 #080502026 edits:
@@ -266,6 +267,7 @@ end
    
 
 # copied over from mixed test
+# if parameter_history is a list of the flex1_params over iterations this should work.
 function plot_flexi_history_ode(parameter_history, alg, savedir, datafile, true_flexi_params; n_intermediate = 10)
     # parameter_history entries are the full struct (p_classical + flex1_params);
     # this panel only cares about the flexi-function slice
