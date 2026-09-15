@@ -4,12 +4,17 @@
 using FlexiBasicLearning
 using CairoMakie
 
-# TODO: this most certainly breaks with the parameter structure change, need to update to use the new parameter structure
+# TODO: TEST this most certainly breaks with the parameter structure change, need to update to use the new parameter structure
 
 function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     # load datafile from results_all_ig
     datafile = results_all_ig[1]["datafile"] # datafile is the same for all results in results_all_ig
-    @load datafile true_params
+    @load datafile true_params # this should be find, will be a CompononetArray with p_classical and flex1_params if function needs that
+    if isa(true_params, ComponentArray)
+        true_flexi_params = true_params.flex1_params # so that we're only looking at what we used gd for
+    else
+        true_flexi_params = true_params
+    end
     for ig in results_all_ig
         optimizers = ig["optimizers"]
         gd_results = [ig["gd_$(optimizer)_result"] for optimizer in ig["optimizers"]]
@@ -18,7 +23,7 @@ function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.m
         savedir = ig["save_dir"]
         # datafile = result["datafile"]
         for (alg, gd_result) in zip(optimizers, gd_results)
-            result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_params)
+            result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_flexi_params)
             # plot stuff
             plot_gd_tracker(result_gd_tracker, alg, savedir)
             plot_param_history(gd_result, alg, savedir, datafile; func_form = func_form, func_string = func_string, n_points = n_points, n_intermediate = n_intermediate)
@@ -28,6 +33,8 @@ function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.m
 end
 
 function gd_tracking(result, gt)
+    # gradient history should be the size of the true_flexi_params
+    # parameter history should be the size of the true_flexi_params
     norms = LinearAlgebra.norm.(result.gradient_history)
     unit_grads = normalize.(result.gradient_history) 
     dots = dot.(unit_grads, Ref(normalize(gt)))
@@ -108,6 +115,12 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
     @load datafile true_params
     @load datafile flexi_args
 
+     if isa(true_params, ComponentArray)
+        true_flexi_params = true_params.flex1_params # so that we're only looking at what we used gd for
+    else
+        true_flexi_params = true_params
+    end
+
     labels = FlexiBasicLearning.func_form_labels(func_form) 
 
     x_data = data[:, 1]
@@ -122,7 +135,7 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
 
     intermediates = result.parameter_history[inter_idxs]
 
-    params_list = vcat([ig], intermediates, [best], [true_params])
+    params_list = vcat([ig], intermediates, [best], [true_flexi_params])
     xs = range(0.0, maximum(x_data), length = n_points)
     xs_flexi = range(0.0, 1.0, length = n_points)
 
@@ -152,6 +165,7 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
     save(joinpath(savedir, "flexifunction_history_$alg.png"), fig1)
 
     # ---- fig2: full model output, may be multi-component ----
+    #TODO: this will need to be modified for mixed models (take full_parameter_history)
     n_outputs = size(FlexiBasicLearning.as_matrix(y_data), 2)
     y_labels = n_outputs == 1 ? ["y"] : ["y$j" for j in 1:n_outputs]
 
@@ -161,7 +175,7 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
            for j in 1:n_outputs]
 
     for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
-        params_func = func_form(params)
+        params_func = func_form(params) # I think this should work but it could be a breaking point
         ys = FlexiBasicLearning.as_matrix([params_func(x) for x in xs])   # n_points × n_outputs
         for j in 1:n_outputs
             lines!(ax2[j], xs, ys[:, j]; label = label, color = color, linestyle = style)
