@@ -109,90 +109,7 @@ function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing)
     return fig
 end
 
-function make_param_history_plots(result, alg, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
-    @load datafile data
-    @load datafile func_form
-    @load datafile true_params
-    @load datafile flexi_args
 
-     if isa(true_params, ComponentArray)
-        true_flexi_params = true_params.flex1_params # so that we're only looking at what we used gd for
-    else
-        true_flexi_params = true_params # kept for compatibility with curr sim data format (TODO: modify sim_data format)
-    end
-
-    labels = FlexiBasicLearning.func_form_labels(func_form) 
-
-    x_data = data[:, 1]
-    y_data = data[:, 2:end] # n×k, for second figure
-
-    ig = result.parameter_history[1]
-    best = result.parameter_history[end]
-    n_best = length(result.parameter_history)
-    log_idxs = exp.(range(log(2), log(n_best - 1), length = n_intermediate))
-    inter_idxs = round.(Int, log_idxs)
-    inter_idxs = unique(inter_idxs)
-
-    intermediates = result.parameter_history[inter_idxs]
-
-    params_list = vcat([ig], intermediates, [best], [true_flexi_params])
-    xs = range(0.0, maximum(x_data), length = n_points)
-    xs_flexi = range(0.0, 1.0, length = n_points)
-
-    param_labels = vcat(["initial guess"],
-                   ["iter $(i)" for i in inter_idxs],
-                   ["best fit"], ["ground truth"])
-    cmap = Makie.cgrad(:blues, n_intermediate, categorical = true)
-    inter_colors = [cmap[i] for i in 1:n_intermediate]
-
-    colors = vcat([:green], inter_colors, [:indigo], [:black])
-    styles = vcat([:solid], fill(:dash, length(intermediates)), [:solid], [:dot])
-
-    # ---- fig1: flexi-function-only, always scalar, unchanged ----
-    fig1 = Figure(size = (800, 600))
-    ax1 = CairoMakie.Axis(fig1[1, 1], xlabel = labels.flexi_x_label, ylabel = "f(x)",
-              title = "Fiting with $alg - Flexifunction Only History for $func_string")
-
-    for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
-        ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]
-        lines!(ax1, xs_flexi, ys; label = label, color = color, linestyle = style)
-    end
-
-    CairoMakie.vlines!(ax1, flexi_args, label = "flexi arg spacing",
-                                linestyle = :solid, color = (:gray, 0.6)) # UNTESTED
-
-    axislegend(ax1, position = :rt)
-    save(joinpath(savedir, "flexifunction_history_$alg.png"), fig1)
-
-    # ---- fig2: full model output, may be multi-component ----
-    #TODO: this will need to be modified for mixed models (take full_parameter_history)
-    n_outputs = size(FlexiBasicLearning.as_matrix(y_data), 2)
-    y_labels = n_outputs == 1 ? ["y"] : ["y$j" for j in 1:n_outputs]
-
-    fig2 = Figure(size = (800, 400 * n_outputs))
-    ax2 = [CairoMakie.Axis(fig2[j, 1], xlabel = labels.xlabel, ylabel = y_labels[j],
-                            title = j == 1 ? "Fiting with $alg - $func_string with Flexifunction History" : "")
-           for j in 1:n_outputs]
-
-    for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
-        params_func = func_form(params) # I think this should work but it could be a breaking point
-        ys = FlexiBasicLearning.as_matrix([params_func(x) for x in xs])   # n_points × n_outputs
-        for j in 1:n_outputs
-            lines!(ax2[j], xs, ys[:, j]; label = label, color = color, linestyle = style)
-        end
-    end
-
-    # plot data points on top, one column per output
-    y_data_mat = FlexiBasicLearning.as_matrix(y_data)
-    for j in 1:n_outputs
-        CairoMakie.scatter!(ax2[j], x_data, y_data_mat[:, j], label = "data", markersize = 10, color = (:red, 0.4))
-        axislegend(ax2[j], position = :rt)
-    end
-
-    save(joinpath(savedir, "fullfunction_history_$alg.png"), fig2)
-
-    return fig1, fig2
-end
 
 function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     @load datafile data
@@ -239,7 +156,7 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
               title = "Fiting with $alg - Flexifunction Only History for $func_string")
 
     for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
-        ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]
+        ys = [FlexiFunctions.evaluate_decompress(x, params.flex1_params) for x in xs_flexi] # here only use flexi params
         lines!(ax1, xs_flexi, ys; label = label, color = color, linestyle = style)
     end
 
@@ -256,7 +173,7 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
 
     fig2 = Figure(size = (800, 400 * n_outputs))
     ax2 = [CairoMakie.Axis(fig2[j, 1], xlabel = labels.xlabel, ylabel = y_labels[j],
-                            title = j == 1 ? "Fiting with $alg - $func_string with Flexifunction History" : "")
+                            title = j == 1 ? "Fitting with $alg - $func_string with Flexifunction History" : "")
            for j in 1:n_outputs]
 
     for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
