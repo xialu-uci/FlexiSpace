@@ -122,9 +122,9 @@ function ig_make_fitting_figs(result)
             y_labels = labels.y_labels, labels = labels_fits)
 
     # flexifunction-only overlay
-    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params))
-    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params))
-    flexi_gd_list = [FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params)) for gd_fit_params in gd_fit_params_list]
+    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params.flex1_params))
+    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params.flex1_params))
+    flexi_gd_list = [FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params.flex1_params)) for gd_fit_params in gd_fit_params_list]
     flexi_pred_list = vcat([flexi_cmaes], flexi_gd_list)
     labels_flexi = vcat(["cmaes flexi"], ["gd flexi ($optimizer)" for optimizer in optimizers])
 

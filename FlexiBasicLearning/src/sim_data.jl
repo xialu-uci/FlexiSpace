@@ -163,8 +163,8 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
 
     function dydx(y, p, x)
         y1, y2 = y
-        y1_mod = y1 / (y1 + 1)
-        dy1 = (y1 + 1) * f(y1_mod) - y1 * y2
+        y1_mod = y1 / (y1 + 1.0) # test flexi_arg range
+        dy1 = (y1 + 1.0) * f(y1_mod) - y1 * y2 # test flexi_arg range
         dy2 = -a * y2 + y1 * y2
         return [dy1, dy2]
     end
@@ -173,7 +173,7 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
     sol = solve(prob, alg; reltol = reltol, abstol = abstol)
 
     if for_sim
-        return sol.t[end], x -> sol(x), x -> sol(x)[1]/(sol(x)[1]+1)
+        return sol.t[end], x -> sol(x), x -> sol(x)[1]/(sol(x)[1]+1.0)
     else
         return x -> sol(x)
     end
@@ -219,7 +219,7 @@ function shape_name(s)
     s === crooked_flexi && return "crooked"
     s === cu_flexi       && return "cu"
     s === cd_flexi       && return "cd"
-    s === mixed_id_flexi  && return "mixed_id"
+    s === id_flexi  && return "id"
     error("Unknown shape: $s")
 end
 
@@ -243,18 +243,18 @@ end
 # # # funcs = [make_flexi1_ode1_func]
 # # funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
-funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
+# a = 1.0
+# funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
+# num_points = [4, 8, 16, 32, 64, 128, 254, 512]
+# dofs = [4, 8, 16, 32, 64, 128, 254, 512]
+# skeys = ["crooked", "cu", "cd","id"]
 
-num_points = [4, 8, 16, 32, 64, 128, 254, 512]
-dofs = [4, 8, 16, 32, 64, 128, 254, 512]
-skeys = ["crooked", "cu", "cd","id"]
 
+# for n in num_points, f in funcs, d in dofs, sname in skeys
+#     fname = func_name(f)
+#     s        = FlexiBasicLearning.shapes[sname]
+#     save_name = joinpath("mixed_true_params/no-noise/a$(a)/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+#     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+# end
 
-for n in num_points, f in funcs, d in dofs, sname in skeys
-    fname = func_name(f)
-    s        = FlexiBasicLearning.shapes[sname]
-    save_name = joinpath("mixed_true_params/no-noise/$(fname)", "sim_data_$(sname).jld2")
-    sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
-end
-
-# sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")
+# # sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")

@@ -33,12 +33,13 @@ function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.m
 end
 
 function gd_tracking(result, gt)
-    # gradient history should be the size of the true_flexi_params
-    # parameter history should be the size of the true_flexi_params
+    # gradient history should be the size of the true_flexi_params, no change needed
+    # parameter history contains classical params too so get rid of them for gd gd_tracking
+    flexi_parameter_history = [p.flex1_params for p in result.parameter_history]
     norms = LinearAlgebra.norm.(result.gradient_history)
     unit_grads = normalize.(result.gradient_history) 
     dots = dot.(unit_grads, Ref(normalize(gt)))
-    dists = dist.(result.parameter_history, Ref(gt))
+    dists = dist.(flexi_parameter_history, Ref(gt))
     gd_tracker = (norms=norms, dots = dots, dists = dists)
     return gd_tracker
 end
@@ -117,11 +118,11 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
     @load datafile true_params
     @load datafile flexi_args
 
-     if isa(true_params, ComponentArray)
-        true_flexi_params = true_params.flex1_params # so that we're only looking at what we used gd for
-    else
-        true_flexi_params = true_params # kept for compatibility with curr sim data format (TODO: modify sim_data format)
-    end
+    #  if isa(true_params, ComponentArray)
+    #     true_flexi_params = true_params.flex1_params # so that we're only looking at what we used gd for
+    # else
+    #     true_flexi_params = true_params # kept for compatibility with curr sim data format (TODO: modify sim_data format)
+    # end
 
     labels = FlexiBasicLearning.func_form_labels(func_form) 
 
@@ -137,7 +138,7 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
 
     intermediates = result.parameter_history[inter_idxs]
 
-    params_list = vcat([ig], intermediates, [best], [true_flexi_params])
+    params_list = vcat([ig], intermediates, [best], [true_params])
     xs = range(0.0, maximum(x_data), length = n_points)
     xs_flexi = range(0.0, 1.0, length = n_points)
 

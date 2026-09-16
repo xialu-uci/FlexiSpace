@@ -168,7 +168,10 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     best_candidate_idx = argmin([x[1] for x in candidates])
     chosen_loss, fit_params, chosen_source = candidates[best_candidate_idx]
     
-    
+    full_fit_params = ComponentArray(
+        p_classical = ig.p_classical,
+        flex1_params = fit_params
+    )
     println("CMA-ES: Chose $chosen_source with loss $chosen_loss")
     println("  Initial guess loss: $initial_loss")
     println("  Best during optimization: $best_loss") 
@@ -179,7 +182,7 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     # TODO: modify to be a result with fields
     time = Base.time() - t0
     println("cmaes time:$time ")
-    result = (fit_params = fit_params, loss_history = loss_history, time = time)
+    result = (fit_params = full_fit_params, loss_history = loss_history, time = time)
     return result
 end# CMA-ES Learning Protocol Implementation
 

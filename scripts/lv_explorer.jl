@@ -12,36 +12,7 @@ using Printf
 
 # (2) plot loss vs. a with flex1_params = fit.flex1_params (fig1)
 
-# helper function to find loss vs. a and identify local minima
-# function find_a_local_minima(flex1_params, learning_problem, savedir; step = 0.01)
-#     a_grid = range(0.0, 2.0, step=step)
-#     loss_values = Float64[]
-#     local_min_idxs = Int[]
-#     n = length(a_grid)
-#     lower = 0.0
-#     for (i, a) in enumerate(a_grid)
-#         p_classical_derepr = ComponentArray(a = a)
-#         p_classical_repr = FlexiBasicLearning.represent(p_classical_derepr, learning_problem.model)
-#         params_repr = ComponentArray(
-#             p_classical = p_classical_repr,
-#             flex1_params = flex1_params
-#         )
-#         loss = FlexiBasicLearning.get_loss(params_repr; learning_problem=learning_problem)
-#         # exclude endpoints from local minima consideration
-#         if i > 2 && i < (n+1)
-#             if loss > loss_values[end] && loss[end] < loss_values[end-1]
-#                 push!(local_min_idxs, i-1)
-#             end
-#         end
 
-#         push!(loss_values, loss)
-#     end
-#     result = (a_grid = a_grid,
-#         loss_values = loss_values,
-#         local_min_idxs = local_min_idxs
-#     )
-#     return result
-# end
 
 # debugged and parallel
 function find_a_local_minima(flex1_params, learning_problem, savedir; step = 0.01)

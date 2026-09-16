@@ -15,7 +15,7 @@ function make_ModelFlexiLV(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8)
  
     
     # params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
-    p_classical = ComponentArray(a = 0.0) # not used (here for compatibility)
+    p_classical = ComponentArray(a = 1.0) # not used (here for compatibility)
 
     flex1_params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
     params_repr_ig = ComponentArray(
@@ -46,7 +46,7 @@ function make_rhs(model::ModelFlexiLV; gradient_mode = false)
         x, y = u
         # println(x)
         x_mod = x/(x+1)
-        a = 1.0
+        a = 1.0 # hardcode, do not use classical params.
         # du .= FlexiFunctions.evaluate_decompress.(u, Ref(params); gradient_mode=gradient_mode)
         du[1] = (x+1) * FlexiFunctions.evaluate_decompress(x_mod, params.flex1_params; gradient_mode = gradient_mode) - x*y
         du[2] = -a*y + x*y

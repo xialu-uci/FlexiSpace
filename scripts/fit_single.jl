@@ -10,8 +10,8 @@ using LinearAlgebra
 # ------------------------------------------------------------------
 num_points = 16
 
-expdir  = "../FlexiSpaceLocal/tests/09152026_refactor_mod_def"
-datadir = "../FlexiSpaceLocal/data/w_true_params_flexi_args/no-noise"
+expdir  = "../FlexiSpaceLocal/tests/09162026_refactor_mod_def"
+datadir = "../FlexiSpaceLocal/data/mixed_true_params/no-noise"
 println(isdir(datadir))
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
@@ -45,7 +45,7 @@ println(isdir(datadir))
 
 # uncomment for local testing
 
-func_key  = "flexi1_lv2"
+func_key  = "flexi1_ode1"
 d         = 4
 shape_key = "crooked"
 

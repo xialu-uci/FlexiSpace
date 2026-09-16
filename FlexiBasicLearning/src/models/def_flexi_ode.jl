@@ -43,8 +43,8 @@ end
 
 
 function make_rhs(model::ModelFlexiODE; gradient_mode = false)
-    function rhs(du, u, params, t)
-        du .= FlexiFunctions.evaluate_decompress.(u, Ref(params); gradient_mode=gradient_mode)
+    function rhs(du, u, params_derepr, t)
+        du .= FlexiFunctions.evaluate_decompress.(u, Ref(params_derepr.flex1_params); gradient_mode=gradient_mode)
         return nothing
     end
     return rhs
@@ -60,11 +60,14 @@ function fw(x::AbstractVector, params, model::ModelFlexiODE; gradient_mode = fal
     # sol = solve(prob, Tsit5();
     #     saveat = x,
     #     sensealg = InterpolatingAdjoint(autojacvec = ZygoteVJP())) 
-    sol = solve(prob, Tsit5();
+    sol = solve(prob, Tsit5(); reltol = model.reltol, abstol = model.abstol,
         saveat = x, 
         sensealg = ReverseDiffAdjoint()) # could reduce tolerance
     # println("g_fd:$()")
-    y = vec(Array(sol))   # states x length(x), then transpose -> length(x) x states
-    # println(size())
+    if sol.retcode != SciMLBase.ReturnCode.Success
+        return nothing   # signal failure upstream
+    end
+
+    y = permutedims(Array(sol))
     return y
 end
