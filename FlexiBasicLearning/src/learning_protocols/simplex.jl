@@ -40,7 +40,7 @@ function simplex_learn(learning_problem, p_repr_ig)
     final_params_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(sol.u, p_repr_ig, learning_problem.model)
     #final_params_derepr = CombiCellModelLearning.derepresent_all(final_params_repr, intPoints, learning_problem.model)
 
-    result = (fit_params_repr = final_params_repr, loss_history = loss_history) # returns p_repr
+    result = (fit_params_repr = final_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(final_params_repr, learning_problem.model), loss_history = loss_history) # returns p_repr
 
     return result
 

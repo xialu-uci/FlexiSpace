@@ -160,7 +160,7 @@ function gradient_descent_learn(learning_problem, ig;
     time = Base.time() - t0
     println("Gradient descent ($optimizer) time: $time")
 
-    fit_params = ComponentArray(
+    fit_params_repr = ComponentArray(
         p_classical = ig.p_classical,
         flex1_params = best_params[]
     ) # TODO: make this compatible with unmixed models too
@@ -168,7 +168,8 @@ function gradient_descent_learn(learning_problem, ig;
     #TODO: add full_parameter_history which stores full ComponenetArray of p_classical and flex1_params
     # p_classical does not change within a single gd so just add p_classical to the history of flex1_params
     full_parameter_history = config.save_parameters ? [ComponentArray(p_classical = ig.p_classical, flex1_params = p) for p in parameter_history] : nothing
-    result = (fit_params = fit_params, loss_history = loss_history, optimizer = optimizer, time = time,
+    result = (fit_params_repr = fit_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(fit_params_repr, learning_problem.model),
+     loss_history = loss_history, optimizer = optimizer, time = time,
             gradient_history = config.save_parameters ? gradient_history : nothing,
             #parameter_history = config.save_parameters ? parameter_history : nothing,
             parameter_history = config.save_parameters ? full_parameter_history : nothing,
