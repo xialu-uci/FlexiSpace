@@ -51,15 +51,17 @@ end
 # fit a mixed model
 
 function fit_mixed_alg(datafile, savedir, make_model; 
-    ig = nothing, optimizers = :bfgs, differ = Zygote.gradient, maxiters = 10000, 
+    ig_derepr = nothing, optimizers = :bfgs, differ = Zygote.gradient, maxiters = 10000, 
     save_parameters = false, time_grads = false,
-    loss_strategy = "normalized", n_rounds = 5)
+    loss_strategy = "normalized", n_rounds = 3)
     @load datafile data
     
     
     my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
-    if isnothing(ig)
+    if isnothing(ig_derepr)
         ig = deepcopy(my_model.params_repr_ig)
+    else
+        ig = FlexiBasicLearning.represent_all(ig_derepr, my_model)
     end
     
     # save to savedir
@@ -75,12 +77,13 @@ function fit_mixed_alg(datafile, savedir, make_model;
     # cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
     # gd_time, gd_result = fit_gd(my_prob, ig; optimizers=optimizers, maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
     
-    results        = Vector{Any}(undef, n_rounds+1)   # bfgs (a_result) per round
-    loss_landscapes = Vector{Any}(undef, n_rounds+1)  # loss-vs-a landscape per round's fit
+    results        = Vector{Any}(undef, n_rounds)   # bfgs (a_result) per round
+    # fits        = Vector{Any}(undef, n_rounds+1)   # bfgs (a_result) per round
+    loss_landscapes = Vector{Any}(undef, n_rounds)  # loss-vs-a landscape per round's fit
     # a_guesses      = Vector{Float64}(undef, n_rounds+1)  # scalar a used to seed each round's bfgs
 
-    results[1] = ig
-    loss_landscapes[1] = classical_loss_landscape(ig.flex1_params, my_prob, savedir; step = 0.01)
+    #fits[1] = guess
+    # loss_landscapes[1] = classical_loss_landscape(ig.flex1_params, my_prob, savedir; step = 0.01)
     # --- Round 1: seed with a_local_min found from the initial grid search ---
     
     guess = FlexiBasicLearning.represent_all(ig, my_model) # guess needs to be repr component array with P_classical and flex1_params for learning
@@ -88,7 +91,7 @@ function fit_mixed_alg(datafile, savedir, make_model;
                     # maxiters = 10000, save_parameters = true)
     # loss_landscapes[1] = find_a_local_minima(results[1].fit_params.flex1_params, my_prob, savedir; step = 0.01)
 
-    # --- Rounds 2-5: simplex finds next a_guess, then bfgs refines it ---
+    # --- Rounds 1-5: simplex finds next a_guess, then bfgs finds flexi ---
     for i in :n_rounds
         # prev_fit = results[i - 1].fit_params  # derepresented params from previous round's bfgs fit
         global guess
@@ -99,10 +102,10 @@ function fit_mixed_alg(datafile, savedir, make_model;
         # a_guesses[i] = guess_derepr.p_classical.a
         # a_guess_repr = FlexiBasicLearning.represent_all(simplex_result.fit_params_repr, my_model)
         # simplex_result.fit_params_repr is guess_repr
-        results[i+1] = FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = :adam,
+        results[i] = FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = :adam,
                         maxiters = 10000, save_parameters = true)
-        loss_landscapes[i+1] = classical_loss_landscape(guess.fit_params.flex1_params, my_prob, savedir; step = 0.01)
-        guess = results[i+1].fit_params_repr
+        loss_landscapes[i] = classical_loss_landscape(guess.fit_params_repr.flex1_params, my_prob, savedir; step = 0.01)
+        guess = results[i].fit_params_repr
     end
     # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
     # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
@@ -119,7 +122,7 @@ function concat_gd_result(results)
     flips = []
 
     for result in results
-        a_str = @sprintf("%.3e", FlexiBasicLearning.derepresent(result.fit_params.p_classical, my_model).a)
+        a_str = @sprintf("%.3e", result.fit_params_derepr.p_classical.a)
         fig_flexi = FlexiBasicLearning.plot_flexi_history_ode(result.parameter_history, "adam_a$(a_str)", savedir, datafile, flex1_params)
         flex1_param_history = [p for p in result.parameter_history] #TODO: should update grad_desc history collection to store a as well
         flex1_grad_history = [g for g in result.gradient_history]
@@ -130,8 +133,58 @@ function concat_gd_result(results)
     return all_param_history, all_grad_history, flips
 end
 
-function plot_landscapes(results, loss_landscapes)
+function plot_landscapes(ig_derepr, results, loss_landscapes)
+    a_ig = ig_derepr.p_classical.a
+    og_loss_landscape = classical_loss_landscape(ig_derepr.flex1_params, my_prob, savedir; step = 0.01)
+
+    fig1 = Figure(size = (1000, 700))
+    ax1 = CairoMakie.Axis(fig1[1, 1],
+        xlabel = "a",
+        ylabel = "loss",
+        yscale = log10,
+        title = "Loss landscape vs. a across $(n_rounds) rounds"
+    )
+
+    # baseline: flex1_params = id landscape, for reference
+    # a_global_min_idx = argmin(a_loss_landscape.loss_values)
+    lines!(ax1, og_loss_landscape.a_grid, og_loss_landscape.loss_values,
+        color = :gray, linestyle = :dot, label = "flex1_params = id (baseline)")
+    scatter!(ax1, [og_loss_landscape.a_grid[argmin(og_loss_landscape.loss_values)]],
+        [og_loss_landscape.loss_values[a_global_min_idx]],
+        color = :gray, markersize = 14, marker = :star5)
+
+    # distinct colors per round
+    round_colors = Makie.wong_colors()[1:n_rounds]
+
+    # a_guesses
+    a_guesses = [result.fit_params_derepr.p_classical.a for result in results]
     
+    for i in 1:n_rounds
+        landscape = loss_landscapes[i]
+        color = round_colors[i]
+
+        # main landscape curve
+        lines!(ax1, landscape.a_grid, landscape.loss_values,
+            color = color, label = "round $i fit")
+
+        # local minima: faded circles
+        scatter!(ax1, landscape.a_grid[landscape.local_min_idxs],
+            landscape.loss_values[landscape.local_min_idxs],
+            color = (color, 0.4), markersize = 8, marker = :circle)
+
+        # global minimum: solid star
+        gmin_idx = argmin(landscape.loss_values)
+        scatter!(ax1, [landscape.a_grid[gmin_idx]], [landscape.loss_values[gmin_idx]],
+            color = color, markersize = 16, marker = :star5)
+
+        # a_guess used to seed this round's bfgs: faded vertical dashed line
+        vlines!(ax1, [a_guesses[i]], color = (color, 0.4), linestyle = :dash)
+    end
+
+    axislegend(ax1, position = :rb, labelsize = 11)
+    save(joinpath(savedir, "loss_vs_a_$(n_rounds)rounds.png"), fig1)
+
+
 end
 
 
