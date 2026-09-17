@@ -20,7 +20,10 @@ function simplex_learn(learning_problem, p_repr_ig)
     # parameter_history = logging ? [] : nothing # generally not loging
     
     callback, loss_history = FlexiBasicLearning.create_standard_callback("simplex", config)
-    
+    # println(classical_params_array)
+    # println(FlexiBasicLearning.represent(learning_problem.model.p_derepresented_lowerbounds, learning_problem.model))
+    # println(FlexiBasicLearning.represent(learning_problem.model.p_derepresented_upperbounds, learning_problem.model))
+
     prob = Optimization.OptimizationProblem(
         obj_func,
         classical_params_array;

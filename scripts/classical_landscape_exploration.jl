@@ -1,3 +1,8 @@
+using FlexiBasicLearning
+using ComponentArrays
+using JLD2
+using Printf
+using Zygote
 # goal: explore classical loss landscape for lv2 (nondim). 
 # sim data: ground truth is a = 1.0, dofs = 8, shape = crooked, num_points = 32
 # train with 2 dofs, [8, 64]. 
@@ -59,42 +64,21 @@ function fit_mixed_alg(datafile, savedir, make_model;
     
     my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
     if isnothing(ig_derepr)
-        ig = deepcopy(my_model.params_repr_ig)
+        guess = deepcopy(my_model.params_repr_ig)
     else
-        ig = FlexiBasicLearning.represent_all(ig_derepr, my_model)
+        guess = FlexiBasicLearning.represent_all(ig_derepr, my_model)
     end
     
-    # save to savedir
     mkpath(savedir) # creates the directory only if it doesn't already exist
     
-    result = Dict(
-    "datafile" => datafile,
-    "save_dir" => savedir,
-    "my_model" => my_model,
-    "ig" => ig
-    )
-
-    # cmaes_time, cmaes_result = fit_cmaes(my_prob, ig)
-    # gd_time, gd_result = fit_gd(my_prob, ig; optimizers=optimizers, maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
     
     results        = Vector{Any}(undef, n_rounds)   # bfgs (a_result) per round
-    # fits        = Vector{Any}(undef, n_rounds+1)   # bfgs (a_result) per round
-    loss_landscapes = Vector{Any}(undef, n_rounds)  # loss-vs-a landscape per round's fit
-    # a_guesses      = Vector{Float64}(undef, n_rounds+1)  # scalar a used to seed each round's bfgs
-
-    #fits[1] = guess
-    # loss_landscapes[1] = classical_loss_landscape(ig.flex1_params, my_prob, savedir; step = 0.01)
-    # --- Round 1: seed with a_local_min found from the initial grid search ---
+     loss_landscapes = Vector{Any}(undef, n_rounds)  # loss-vs-a landscape per round's fit
     
-    guess = FlexiBasicLearning.represent_all(ig, my_model) # guess needs to be repr component array with P_classical and flex1_params for learning
-    # results[1] = FlexiBasicLearning.gradient_descent_learn(my_prob, a1_guess; optimizer = optimizer,
-                    # maxiters = 10000, save_parameters = true)
-    # loss_landscapes[1] = find_a_local_minima(results[1].fit_params.flex1_params, my_prob, savedir; step = 0.01)
-
-    # --- Rounds 1-5: simplex finds next a_guess, then bfgs finds flexi ---
-    for i in :n_rounds
+    # --- Rounds 1-n: simplex finds next a_guess, then bfgs finds flexi ---
+    for i in 1:n_rounds
         # prev_fit = results[i - 1].fit_params  # derepresented params from previous round's bfgs fit
-        global guess
+        # global guess
     
         simplex_result = FlexiBasicLearning.simplex_learn(my_prob, guess)
 
@@ -104,26 +88,30 @@ function fit_mixed_alg(datafile, savedir, make_model;
         # simplex_result.fit_params_repr is guess_repr
         results[i] = FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = :adam,
                         maxiters = 10000, save_parameters = true)
-        loss_landscapes[i] = classical_loss_landscape(guess.fit_params_repr.flex1_params, my_prob, savedir; step = 0.01)
         guess = results[i].fit_params_repr
+        println("saved result $i")
+        loss_landscapes[i] = classical_loss_landscape(guess.flex1_params, my_prob, savedir; step = 0.01)
+        println("saved landscape $i")
+
     end
     # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
     # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
-
+    println("out of for loop")
+    return my_prob, results, loss_landscapes
     # save results, loss_landscapes, a_guesses to savedir to reload and plot later
-    @save joinpath(savedir, "results_landscapes_guesses.jld2") results loss_landscapes
+    @save joinpath(savedir, "results_landscapes_guesses.jld2") my_prob results loss_landscapes
 
 
 end
 
-function concat_gd_result(results)
+function concat_gd_result(results,)
     all_param_history = []
     all_grad_history = []
     flips = []
 
     for result in results
         a_str = @sprintf("%.3e", result.fit_params_derepr.p_classical.a)
-        fig_flexi = FlexiBasicLearning.plot_flexi_history_ode(result.parameter_history, "adam_a$(a_str)", savedir, datafile, flex1_params)
+        # fig_flexi = FlexiBasicLearning.plot_flexi_history_ode(result.parameter_history, "adam_a$(a_str)", savedir, datafile, flex1_params)
         flex1_param_history = [p for p in result.parameter_history] #TODO: should update grad_desc history collection to store a as well
         flex1_grad_history = [g for g in result.gradient_history]
         append!(all_param_history, flex1_param_history)
@@ -133,10 +121,11 @@ function concat_gd_result(results)
     return all_param_history, all_grad_history, flips
 end
 
-function plot_landscapes(ig_derepr, results, loss_landscapes)
+function plot_landscapes(my_prob, results, loss_landscapes)
+    ig_derepr = my_prob.model.params_derepresented_ig
     a_ig = ig_derepr.p_classical.a
     og_loss_landscape = classical_loss_landscape(ig_derepr.flex1_params, my_prob, savedir; step = 0.01)
-
+    n_rounds = length(results)
     fig1 = Figure(size = (1000, 700))
     ax1 = CairoMakie.Axis(fig1[1, 1],
         xlabel = "a",
@@ -150,7 +139,7 @@ function plot_landscapes(ig_derepr, results, loss_landscapes)
     lines!(ax1, og_loss_landscape.a_grid, og_loss_landscape.loss_values,
         color = :gray, linestyle = :dot, label = "flex1_params = id (baseline)")
     scatter!(ax1, [og_loss_landscape.a_grid[argmin(og_loss_landscape.loss_values)]],
-        [og_loss_landscape.loss_values[a_global_min_idx]],
+        [og_loss_landscape.loss_values[argmin(og_loss_landscape.loss_values)]],
         color = :gray, markersize = 14, marker = :star5)
 
     # distinct colors per round
@@ -188,7 +177,29 @@ function plot_landscapes(ig_derepr, results, loss_landscapes)
 end
 
 
-datafile = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2"
-savedir_base = "../FlexiSpaceLocal/exp/09172026/lv2_classical_landscape_exploration/"
+datafile = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked.jld2"
+savedir_base = "../FlexiSpaceLocal/exp/09172026/lv2_classical_landscape_exploration/gt-a1-crooked4"
 # mkpath(savedir)
 
+@load datafile true_params
+
+
+
+make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = 4)
+
+# ig_derepr= make_model().params_derepresented_ig
+
+savedir = joinpath(savedir_base, "fit_w_mixed_flexi1_lv2_crooked4")
+
+my_prob, results, loss_landscapes = fit_mixed_alg(datafile, savedir, make_model)
+
+plot_landscapes(my_prob, results, loss_landscapes)
+
+all_param_history, all_grad_history, flips = concat_gd_result(results)
+
+gd_tracker = FlexiBasicLearning.gd_tracking( (gradient_history = all_grad_history, parameter_history = all_param_history), 
+     true_params.flex1_params)
+gd_tracker_fig = FlexiBasicLearning.plot_gd_tracker(gd_tracker, "adam", savedir; flip_boundaries = flips)
+
+
+# add plotting of the flexi and full function histories

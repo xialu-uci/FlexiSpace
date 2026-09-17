@@ -93,7 +93,8 @@ const model_makers = Dict(
     "flexi1"      => d -> () -> FlexiBasicLearning.make_ModelFlexi1(;flexi_dofs=d),
     "flexi1_alg1" => d -> () -> FlexiBasicLearning.make_ModelFlexiAlg(;flexi_dofs=d),  # same structure for now
     "flexi1_ode1" => d -> () -> FlexiBasicLearning.make_ModelFlexiODE(;flexi_dofs=d),
-    "flexi1_lv2" => d -> () -> FlexiBasicLearning.make_ModelFlexiLV(;flexi_dofs = d)
+    "flexi1_lv2" => d -> () -> FlexiBasicLearning.make_ModelFlexiLV(;flexi_dofs = d),
+    "mixed_flexi1_lv2" => d -> () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
 )
 
 
