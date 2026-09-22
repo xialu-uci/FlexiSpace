@@ -3,6 +3,7 @@ using ComponentArrays
 using JLD2
 using Printf
 using Zygote
+using CairoMakie
 # goal: explore classical loss landscape for lv2 (nondim). 
 # sim data: ground truth is a = 1.0, dofs = 8, shape = crooked, num_points = 32
 # train with 2 dofs, [8, 64]. 
@@ -73,7 +74,7 @@ function fit_mixed_alg(datafile, savedir, make_model;
     
     
     results        = Vector{Any}(undef, n_rounds)   # bfgs (a_result) per round
-     loss_landscapes = Vector{Any}(undef, n_rounds)  # loss-vs-a landscape per round's fit
+    loss_landscapes = Vector{Any}(undef, n_rounds)  # loss-vs-a landscape per round's fit
     
     # --- Rounds 1-n: simplex finds next a_guess, then bfgs finds flexi ---
     for i in 1:n_rounds
@@ -104,7 +105,7 @@ function fit_mixed_alg(datafile, savedir, make_model;
 
 end
 
-function concat_gd_result(results,)
+function concat_gd_result(results, my_prob)
     all_param_history = []
     all_grad_history = []
     flips = []
@@ -112,7 +113,7 @@ function concat_gd_result(results,)
     for result in results
         a_str = @sprintf("%.3e", result.fit_params_derepr.p_classical.a)
         # fig_flexi = FlexiBasicLearning.plot_flexi_history_ode(result.parameter_history, "adam_a$(a_str)", savedir, datafile, flex1_params)
-        flex1_param_history = [p for p in result.parameter_history] #TODO: should update grad_desc history collection to store a as well
+        flex1_param_history = [FlexiBasicLearning.derepresent_all(p, my_prob.model) for p in result.parameter_history] #TODO: should update grad_desc history collection to store a as well
         flex1_grad_history = [g for g in result.gradient_history]
         append!(all_param_history, flex1_param_history)
         append!(all_grad_history, flex1_grad_history)
@@ -121,7 +122,7 @@ function concat_gd_result(results,)
     return all_param_history, all_grad_history, flips
 end
 
-function plot_landscapes(my_prob, results, loss_landscapes)
+function plot_landscapes(my_prob, results, loss_landscapes, savedir)
     ig_derepr = my_prob.model.params_derepresented_ig
     a_ig = ig_derepr.p_classical.a
     og_loss_landscape = classical_loss_landscape(ig_derepr.flex1_params, my_prob, savedir; step = 0.01)
@@ -178,28 +179,32 @@ end
 
 
 datafile = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked.jld2"
-savedir_base = "../FlexiSpaceLocal/exp/09172026/lv2_classical_landscape_exploration/gt-a1-crooked4"
+savedir_base = "../FlexiSpaceLocal/exp/09172026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4"
 # mkpath(savedir)
 
 @load datafile true_params
 
+dofs = [4, 32, 64]
 
+for d in dofs
 
-make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = 4)
+    make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
 
-# ig_derepr= make_model().params_derepresented_ig
+    # ig_derepr= make_model().params_derepresented_ig
 
-savedir = joinpath(savedir_base, "fit_w_mixed_flexi1_lv2_crooked4")
+    savedir = joinpath(savedir_base, "fit_w_mixed_flexi1_lv2_crooked$d")
 
-my_prob, results, loss_landscapes = fit_mixed_alg(datafile, savedir, make_model)
+    my_prob, results, loss_landscapes = fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3)
 
-plot_landscapes(my_prob, results, loss_landscapes)
+    plot_landscapes(my_prob, results, loss_landscapes, savedir)
 
-all_param_history, all_grad_history, flips = concat_gd_result(results)
+    all_param_history, all_grad_history, flips = concat_gd_result(results, my_prob)
 
-gd_tracker = FlexiBasicLearning.gd_tracking( (gradient_history = all_grad_history, parameter_history = all_param_history), 
-     true_params.flex1_params)
-gd_tracker_fig = FlexiBasicLearning.plot_gd_tracker(gd_tracker, "adam", savedir; flip_boundaries = flips)
+    gd_tracker = FlexiBasicLearning.gd_tracking( (gradient_history = all_grad_history, parameter_history = all_param_history), 
+        true_params.flex1_params)
+    gd_tracker_fig = FlexiBasicLearning.plot_gd_tracker(gd_tracker, "adam", savedir; flip_boundaries = flips)
 
+    flexi_history_fig, full_history_fig = FlexiBasicLearning.plot_param_history( (gradient_history = all_grad_history, parameter_history = all_param_history), "adam", savedir, datafile)
 
+end
 # add plotting of the flexi and full function histories

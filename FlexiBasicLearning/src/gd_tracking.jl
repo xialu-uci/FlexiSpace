@@ -36,12 +36,28 @@ function gd_tracking(result, gt)
     # gradient history should be the size of the true_flexi_params, no change needed
     # parameter history contains classical params too so get rid of them for gd gd_tracking
     flexi_parameter_history = [p.flex1_params for p in result.parameter_history]
+    if length(flexi_parameter_history[1]) != length(gt)
+        gt = flexi_equiv(gt, length(flexi_parameter_history[1]))
+    end
     norms = LinearAlgebra.norm.(result.gradient_history)
     unit_grads = normalize.(result.gradient_history) 
     dots = dot.(unit_grads, Ref(normalize(gt)))
     dists = dist.(flexi_parameter_history, Ref(gt))
     gd_tracker = (norms=norms, dots = dots, dists = dists)
     return gd_tracker
+end
+
+function flexi_equiv(gt, dofs)
+    if dofs%length(gt) !=0
+        # dofs = dofs - (dofs%length(gt))
+        @warn "model dofs not divisible by gt dofs, may not be able to reach equivalent gt with this model"
+    end
+
+    x = collect(0.0:1/dofs:1.0)
+    y = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x, Ref(gt))
+    dy = [y[i+1]-y[i] for i in 1:dofs]
+    return sqrt.(dy)
+
 end
 
 # sol.u, loss_history, grad_norm_history, grads, params
@@ -112,12 +128,13 @@ end
 
 
 
-function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
+function plot_param_history(result, alg, savedir, datafile; func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
     @load datafile data
     @load datafile func_form
     @load datafile true_params
     @load datafile flexi_args
 
+    
     #  if isa(true_params, ComponentArray)
     #     true_flexi_params = true_params.flex1_params # so that we're only looking at what we used gd for
     # else
@@ -132,6 +149,10 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
     ig = result.parameter_history[1]
     best = result.parameter_history[end]
     n_best = length(result.parameter_history)
+    if n_intermediate < n_best
+        n_intermediate = max(0, n_best - 2)
+    end
+
     log_idxs = exp.(range(log(2), log(n_best - 1), length = n_intermediate))
     inter_idxs = round.(Int, log_idxs)
     inter_idxs = unique(inter_idxs)
@@ -163,6 +184,9 @@ function plot_param_history(result, alg, savedir, datafile; func_form = FlexiBas
 
     CairoMakie.vlines!(ax1, flexi_args, label = "flexi arg spacing",
                                 linestyle = :solid, color = (:gray, 0.6)) # UNTESTED
+    println(maximum(flexi_args))
+    println(minimum(flexi_args))
+
 
     axislegend(ax1, position = :rt)
     save(joinpath(savedir, "flexifunction_history_$alg.png"), fig1)
