@@ -6,9 +6,7 @@ using Random
 
 #load crooked sim data
 
-#TODO: does change to param structure break this? I don't think so, but check
-# datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
-
+#TODO: sort through which of these are still valuable to use
 #080502026 edits:
 
     #(1) saving datafile to results dict, plotting functions now load datafile from results dict, instead of passing it in as an argument

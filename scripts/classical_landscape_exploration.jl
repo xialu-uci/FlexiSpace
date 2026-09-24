@@ -112,8 +112,39 @@ function fit_mixed_alg(datafile, savedir, make_model;
     # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
     # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
     # println("out of for loop")
-    @save joinpath(savedir, "results_$optimizer.jld2") my_prob results loss_landscapes
+    #TODO: reorganize results and save as follows:
+    results_dict = Dict{
+        "datafile" => datafile,
+        "save_dir" => savedir,
+        "my_prob" => my_prob,
+        "ig_derepr" => ig_derepr,
+        "intermediate_results" => results,
+        "loss_landscapes" => loss_landscapes
+    }
+    
+    final_result = results[end]
+    
 
+    if optimizer == :cmaes
+        all_loss_history = concat_gd_result(results, my_prob, optimizer)
+    else
+        all_param_history, all_grad_history, all_loss_history, flips = concat_gd_result(results, my_prob, optimizer)
+        final_result.param_history = all_param_history
+        final_result.grad_history = all_grad_history
+    end
+    final_result.loss_history = all_loss_history
+
+    results_dict["final_result"] = final_result
+    results_dict["flips"] = flips
+
+    # my_prob
+    # intermediate_results = [simplex --> flexi iter 1 result, simplex --> flexi iter 2 result,... final result] # should have all fields of gd (or cmaes)
+    # final_result # should have all fields of gd (or cmaes) BUT 
+        # replace loss_history with all_loss_history, param_history with all_param_history, grad_history with all_grad_history
+        # add flips 
+    # loss_landscapes = [using id flexi (ig), using flexi found in iter 1 result, using flexi found in iter 2 result, ..., using flexi found in final result]
+    @save joinpath(savedir, "results_$optimizer.jld2") my_prob results loss_landscapes
+    
     return my_prob, results, loss_landscapes
     # save results, loss_landscapes, a_guesses to savedir to reload and plot later
     #  @save joinpath(savedir, "results_landscapes_guesses.jld2") my_prob results loss_landscapes
@@ -121,7 +152,12 @@ function fit_mixed_alg(datafile, savedir, make_model;
 
 end
 
-function concat_gd_result(results, my_prob)
+function concat_gd_result(results, my_prob, optimizer)
+    if optimizer == :cmaes
+        all_loss_history = collect(Iterators.flatten([result.loss_history for result in results]))
+        return all_loss_history
+    end
+
     all_param_history = []
     all_grad_history = []
     all_loss_history = []
@@ -198,15 +234,15 @@ end
 
 
 datafile = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked.jld2"
-savedir_base = "../FlexiSpaceLocal/tests/09232026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/debug-loss-history-plots-bfgs"
+savedir_base = "../FlexiSpaceLocal/tests/09232026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/debug-loss-history-plots-cmaes"
 # mkpath(savedir)
 
 @load datafile true_params
 
 # dofs = [4, 32, 64]
 d = 4
-optimizer = :bfgs
-opt_str = "bfgs"
+optimizer = :cmaes
+opt_str = "cmaes"
 
 results_list = []
 # for d in dofs
@@ -237,6 +273,8 @@ results_list = []
     end
     
     loss_history_fig = FlexiBasicLearning.make_loss_history_figs([all_loss_history], [0.0], ["simplex --> $opt_str"])
+    save(joinpath(savedir, "loss_history_simplex_$opt_str.png"), loss_history_fig)
+
 
 # end
 # add plotting of the flexi and full function histories
