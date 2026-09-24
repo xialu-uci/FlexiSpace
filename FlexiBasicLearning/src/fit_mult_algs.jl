@@ -266,6 +266,7 @@ function fit_all_algs(datafile, savedir, make_model;
 end
    
 
+# TODO: Not used
 # copied over from mixed test
 # if parameter_history is a list of the flex1_params over iterations this should work.
 function plot_flexi_history_ode(parameter_history, alg, savedir, datafile, true_flexi_params; n_intermediate = 10)

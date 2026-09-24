@@ -149,8 +149,8 @@ function plot_param_history(result, alg, savedir, datafile; func_string = "y = f
     ig = result.parameter_history[1]
     best = result.parameter_history[end]
     n_best = length(result.parameter_history)
-    if n_intermediate < n_best
-        n_intermediate = max(0, n_best - 2)
+    if n_intermediate > n_best
+        n_intermediate = max(1, n_best - 2)
     end
 
     log_idxs = exp.(range(log(2), log(n_best - 1), length = n_intermediate))

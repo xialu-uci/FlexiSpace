@@ -23,10 +23,20 @@ using CairoMakie
 # plot landscape.
 
 # helper function computes loss landscape
-function classical_loss_landscape(flex1_params, learning_problem, savedir; step = 0.01)
+function classical_loss_landscape(flex1_params, learning_problem, savedir; step = 0.01, spec_a_value = nothing)
+
     a_grid = range(0.0, 2.0, step = step)
+    a_grid = collect(range(0.0, 2.0, step=step))
+     if !(isnothing(spec_a_value))
+        idx = searchsortedfirst(a_grid, specific_a_value)
+        if idx > length(a_grid) || a_grid[idx] != specific_a_value
+            insert!(a_grid, idx, specific_a_value)
+        end
+    end
+    
     n = length(a_grid)
     loss_values = Vector{Float64}(undef, n)
+   
 
     Threads.@threads for i in 1:n
         a = a_grid[i]
@@ -57,7 +67,7 @@ end
 # fit a mixed model
 
 function fit_mixed_alg(datafile, savedir, make_model; 
-    ig_derepr = nothing, optimizers = :bfgs, differ = Zygote.gradient, maxiters = 10000, 
+    ig_derepr = nothing, optimizer = :bfgs, differ = Zygote.gradient, maxiters = 10000, 
     save_parameters = false, time_grads = false,
     loss_strategy = "normalized", n_rounds = 3)
     @load datafile data
@@ -87,8 +97,12 @@ function fit_mixed_alg(datafile, savedir, make_model;
         # a_guesses[i] = guess_derepr.p_classical.a
         # a_guess_repr = FlexiBasicLearning.represent_all(simplex_result.fit_params_repr, my_model)
         # simplex_result.fit_params_repr is guess_repr
-        results[i] = FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = :adam,
+        if optimzer == :cmaes
+            results[i] = FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
+        else
+            results[i] = FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer,
                         maxiters = 10000, save_parameters = true)
+        end
         guess = results[i].fit_params_repr
         println("saved result $i")
         loss_landscapes[i] = classical_loss_landscape(guess.flex1_params, my_prob, savedir; step = 0.01)
@@ -97,10 +111,12 @@ function fit_mixed_alg(datafile, savedir, make_model;
     end
     # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
     # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
-    println("out of for loop")
-    return my_prob, results, loss_landscapes
+    # println("out of for loop")
+    @save joinpath(savedir, "results_$optimizer.jld2") my_prob results # loss_landscapes
+
+    return my_prob, results # , loss_landscapes
     # save results, loss_landscapes, a_guesses to savedir to reload and plot later
-    @save joinpath(savedir, "results_landscapes_guesses.jld2") my_prob results loss_landscapes
+    #  @save joinpath(savedir, "results_landscapes_guesses.jld2") my_prob results loss_landscapes
 
 
 end
@@ -108,18 +124,21 @@ end
 function concat_gd_result(results, my_prob)
     all_param_history = []
     all_grad_history = []
+    all_loss_history = []
     flips = []
+    
 
     for result in results
         a_str = @sprintf("%.3e", result.fit_params_derepr.p_classical.a)
         # fig_flexi = FlexiBasicLearning.plot_flexi_history_ode(result.parameter_history, "adam_a$(a_str)", savedir, datafile, flex1_params)
-        flex1_param_history = [FlexiBasicLearning.derepresent_all(p, my_prob.model) for p in result.parameter_history] #TODO: should update grad_desc history collection to store a as well
-        flex1_grad_history = [g for g in result.gradient_history]
-        append!(all_param_history, flex1_param_history)
-        append!(all_grad_history, flex1_grad_history)
+        param_history = [FlexiBasicLearning.derepresent_all(p, my_prob.model) for p in result.parameter_history] #TODO: should update grad_desc history collection to store a as well
+        grad_history = [g for g in result.gradient_history]
+        append!(all_param_history, param_history)
+        append!(all_grad_history, grad_history)
+        append!(all_loss_history, result.loss_history)
         push!(flips, length(all_param_history))
     end
-    return all_param_history, all_grad_history, flips
+    return all_param_history, all_grad_history, all_loss_history, flips
 end
 
 function plot_landscapes(my_prob, results, loss_landscapes, savedir)
@@ -179,13 +198,17 @@ end
 
 
 datafile = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked.jld2"
-savedir_base = "../FlexiSpaceLocal/exp/09172026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4"
+savedir_base = "../FlexiSpaceLocal/exp/09222026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/cmaes"
 # mkpath(savedir)
 
 @load datafile true_params
 
 dofs = [4, 32, 64]
 
+optimizer = :bfgs
+opt_str = "bfgs"
+
+results_list = []
 for d in dofs
 
     make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
@@ -194,17 +217,26 @@ for d in dofs
 
     savedir = joinpath(savedir_base, "fit_w_mixed_flexi1_lv2_crooked$d")
 
-    my_prob, results, loss_landscapes = fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3)
+    my_prob, results, loss_landscapes = fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3, optimizer = optimizer)
+
+    push!(results_list, results)
 
     plot_landscapes(my_prob, results, loss_landscapes, savedir)
 
-    all_param_history, all_grad_history, flips = concat_gd_result(results, my_prob)
+    if optimizer != :cmaes
+        all_param_history, all_grad_history, all_loss_history, flips = concat_gd_result(results, my_prob)
 
-    gd_tracker = FlexiBasicLearning.gd_tracking( (gradient_history = all_grad_history, parameter_history = all_param_history), 
-        true_params.flex1_params)
-    gd_tracker_fig = FlexiBasicLearning.plot_gd_tracker(gd_tracker, "adam", savedir; flip_boundaries = flips)
-
-    flexi_history_fig, full_history_fig = FlexiBasicLearning.plot_param_history( (gradient_history = all_grad_history, parameter_history = all_param_history), "adam", savedir, datafile)
+        gd_tracker = FlexiBasicLearning.gd_tracking( (gradient_history = all_grad_history, parameter_history = all_param_history), 
+            true_params.flex1_params)
+        gd_tracker_fig = FlexiBasicLearning.plot_gd_tracker(gd_tracker, opt_str, savedir; flip_boundaries = flips)
+        
+        flexi_history_fig, full_history_fig = FlexiBasicLearning.plot_param_history( (gradient_history = all_grad_history, parameter_history = all_param_history), opt_str, savedir, datafile)
+    else
+        all_loss_history = collect(Iterators.flatten([result.loss_history for result in results]))
+        # println(all_loss_history)
+    end
+    
+    loss_history_fig = FlexiBasicLearning.make_loss_history_figs([all_loss_history], [0.0], ["simplex --> $opt_str"])
 
 end
 # add plotting of the flexi and full function histories
