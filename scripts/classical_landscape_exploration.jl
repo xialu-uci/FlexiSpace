@@ -23,17 +23,17 @@ using CairoMakie
 # plot landscape.
 
 # helper function computes loss landscape
-function classical_loss_landscape(flex1_params, learning_problem, savedir; step = 0.01, spec_a_value = nothing)
+function classical_loss_landscape(flex1_params, learning_problem, savedir; step = 0.01, specific_a_value = nothing)
 
-    a_grid = range(0.0, 2.0, step = step)
+    # a_grid = range(0.0, 2.0, step = step)
     a_grid = collect(range(0.0, 2.0, step=step))
-     if !(isnothing(spec_a_value))
+     if !(isnothing(specific_a_value))
         idx = searchsortedfirst(a_grid, specific_a_value)
         if idx > length(a_grid) || a_grid[idx] != specific_a_value
             insert!(a_grid, idx, specific_a_value)
         end
     end
-    
+
     n = length(a_grid)
     loss_values = Vector{Float64}(undef, n)
    
@@ -97,7 +97,7 @@ function fit_mixed_alg(datafile, savedir, make_model;
         # a_guesses[i] = guess_derepr.p_classical.a
         # a_guess_repr = FlexiBasicLearning.represent_all(simplex_result.fit_params_repr, my_model)
         # simplex_result.fit_params_repr is guess_repr
-        if optimzer == :cmaes
+        if optimizer == :cmaes
             results[i] = FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
         else
             results[i] = FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer,
@@ -105,16 +105,16 @@ function fit_mixed_alg(datafile, savedir, make_model;
         end
         guess = results[i].fit_params_repr
         println("saved result $i")
-        loss_landscapes[i] = classical_loss_landscape(guess.flex1_params, my_prob, savedir; step = 0.01)
+        loss_landscapes[i] = classical_loss_landscape(guess.flex1_params, my_prob, savedir; step = 0.01, specific_a_value = results[i].fit_params_derepr.p_classical.a)
         println("saved landscape $i")
 
     end
     # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
     # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
     # println("out of for loop")
-    @save joinpath(savedir, "results_$optimizer.jld2") my_prob results # loss_landscapes
+    @save joinpath(savedir, "results_$optimizer.jld2") my_prob results loss_landscapes
 
-    return my_prob, results # , loss_landscapes
+    return my_prob, results, loss_landscapes
     # save results, loss_landscapes, a_guesses to savedir to reload and plot later
     #  @save joinpath(savedir, "results_landscapes_guesses.jld2") my_prob results loss_landscapes
 
@@ -198,18 +198,18 @@ end
 
 
 datafile = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked.jld2"
-savedir_base = "../FlexiSpaceLocal/exp/09222026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/cmaes"
+savedir_base = "../FlexiSpaceLocal/tests/09232026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/debug-loss-history-plots-bfgs"
 # mkpath(savedir)
 
 @load datafile true_params
 
-dofs = [4, 32, 64]
-
+# dofs = [4, 32, 64]
+d = 4
 optimizer = :bfgs
 opt_str = "bfgs"
 
 results_list = []
-for d in dofs
+# for d in dofs
 
     make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
 
@@ -238,5 +238,5 @@ for d in dofs
     
     loss_history_fig = FlexiBasicLearning.make_loss_history_figs([all_loss_history], [0.0], ["simplex --> $opt_str"])
 
-end
+# end
 # add plotting of the flexi and full function histories
