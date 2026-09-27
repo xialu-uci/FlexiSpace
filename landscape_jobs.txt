@@ -1,0 +1,12 @@
+4 cmaes
+4 bfgs
+5 cmaes
+5 bfgs
+8 cmaes
+8 bfgs
+16 cmaes
+16 bfgs
+32 cmaes
+32 bfgs
+64 cmaes
+64 bfgs

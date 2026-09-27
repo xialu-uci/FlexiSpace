@@ -68,6 +68,7 @@ include("learning_protocols/simplex.jl")
 # include functions for fitting and plotting
 include("fit_flexi.jl")
 include("fit_mult_algs.jl")
+include("fit_mixed.jl")
 include("sim_data.jl") # use naming functions in other files
 # include("loss_slicing.jl") # for looking at loss vs. params and other stuff.
 include("gd_tracking.jl") # for looking at where gd goes

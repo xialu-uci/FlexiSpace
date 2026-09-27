@@ -182,7 +182,7 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     # TODO: modify to be a result with fields
     time = Base.time() - t0
     println("cmaes time:$time ")
-    result = (fit_params_repr = fit_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(fit_params_repr, learning_problem.model),
+    result = (fit_params_repr = fit_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(fit_params_repr, learning_problem.model), optimizer = :cmaes,
      loss_history = loss_history, time = time)
     return result
 end# CMA-ES Learning Protocol Implementation
