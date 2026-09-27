@@ -3,14 +3,13 @@ using FlexiBasicLearning
 using CairoMakie
 using LinearAlgebra
 
-#TODO: move outside of 
 # ------------------------------------------------------------------
 # Static config -- must match fit_single.jl exactly
 # ------------------------------------------------------------------
 # const num_points = 20
-num_points = 20
-expdir  = "../FlexiSpaceLocal/tests/08102025-apple/"
-datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
+num_points = 16
+expdir  = "../FlexiSpaceLocal/tests/09162026_refactor_mod_def/"
+datadir = "../FlexiSpaceLocal/data/mixed_true_params/no-noise"
 
 # func_info = Dict(
 #     "flexi1"      => (FlexiBasicLearning.make_flexi1_func,      "y = f(t)"),
@@ -24,7 +23,8 @@ datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 #     "cd"      => FlexiBasicLearning.cd_flexi,
 # )
 
-dofs = [3, 4, 5, 20, 50]
+dofs = [4]
+shape_keys_test = ["crooked"]
 
 # dofs = [3]
 
@@ -35,7 +35,7 @@ n_ok = 0
 n_missing = 0
 n_failed = 0
 
-for func_key in keys(FlexiBasicLearning.func_info), d in dofs, shape_key in keys(FlexiBasicLearning.shapes)
+for func_key in keys(FlexiBasicLearning.func_info), d in dofs, shape_key in shape_keys_test# keys(FlexiBasicLearning.shapes)
     f, f_str = FlexiBasicLearning.func_info[func_key]
     s = FlexiBasicLearning.shapes[shape_key]
 

@@ -44,7 +44,7 @@ end
 
 # CMA-ES implementation
 function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
-    
+    # should take guess in repr form and return best fit in repr form
     # timing
     t0 = Base.time()
     
@@ -53,8 +53,18 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     best_flexi_params = nothing
     
 
-    function flexi_loss(params, p)
-       return FlexiBasicLearning.get_loss(params; learning_problem=learning_problem)
+    # function flexi_loss(params, p)
+    #    return FlexiBasicLearning.get_loss(params; learning_problem=learning_problem)
+    # end
+    function flexi_loss(flexi_params, p)
+        # TODO: make this compatible with the unmixed models too
+        params = ComponentArray(
+            p_classical = ig.p_classical,
+            flex1_params = flexi_params
+        )
+        loss = get_loss(params; learning_problem=learning_problem, gradient_mode=true)
+    
+       return loss
     end
 
     # Evaluate initial guess
@@ -113,7 +123,10 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     lb = 0.0*fill(flexi_bound, length(ig));#-1.0*fill(flexi_bound, length(ig))
     ub = +1.0*fill(flexi_bound, length(ig))
 
-    prob = Optimization.OptimizationProblem(optf, ig, [1.0, 100.0]; lb=lb, ub=ub)
+    # define ig as flexi only
+    flexi_ig = collect(ig.flex1_params) 
+
+    prob = Optimization.OptimizationProblem(optf, flexi_ig, [1.0, 100.0]; lb=lb, ub=ub) # now only train on flexi
 
     # BELOW: protocol dependencies
     # Build CMAES options with hyperparameters
@@ -155,7 +168,10 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     best_candidate_idx = argmin([x[1] for x in candidates])
     chosen_loss, fit_params, chosen_source = candidates[best_candidate_idx]
     
-    
+    fit_params_repr = ComponentArray(
+        p_classical = ig.p_classical,
+        flex1_params = fit_params
+    )
     println("CMA-ES: Chose $chosen_source with loss $chosen_loss")
     println("  Initial guess loss: $initial_loss")
     println("  Best during optimization: $best_loss") 
@@ -166,7 +182,8 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     # TODO: modify to be a result with fields
     time = Base.time() - t0
     println("cmaes time:$time ")
-    result = (fit_params = fit_params, loss_history = loss_history, time = time)
+    result = (fit_params_repr = fit_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(fit_params_repr, learning_problem.model), optimizer = :cmaes,
+     loss_history = loss_history, time = time)
     return result
 end# CMA-ES Learning Protocol Implementation
 

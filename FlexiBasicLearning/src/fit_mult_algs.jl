@@ -6,8 +6,7 @@ using Random
 
 #load crooked sim data
 
-# datafile = "../FlexiSpaceLocal/data/sim_data_cu_5seg.jld2"
-
+#TODO: sort through which of these are still valuable to use
 #080502026 edits:
 
     #(1) saving datafile to results dict, plotting functions now load datafile from results dict, instead of passing it in as an argument
@@ -23,7 +22,7 @@ function ig_fit_all_algs(datafile, savedir, make_model;
     
     my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
     if isnothing(ig)
-        ig = deepcopy(my_model.params)
+        ig = deepcopy(my_model.params_repr_ig)
     end
     
     # save to savedir
@@ -121,9 +120,9 @@ function ig_make_fitting_figs(result)
             y_labels = labels.y_labels, labels = labels_fits)
 
     # flexifunction-only overlay
-    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params))
-    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params))
-    flexi_gd_list = [FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params)) for gd_fit_params in gd_fit_params_list]
+    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params.flex1_params))
+    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params.flex1_params))
+    flexi_gd_list = [FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params.flex1_params)) for gd_fit_params in gd_fit_params_list]
     flexi_pred_list = vcat([flexi_cmaes], flexi_gd_list)
     labels_flexi = vcat(["cmaes flexi"], ["gd flexi ($optimizer)" for optimizer in optimizers])
 
@@ -265,12 +264,14 @@ function fit_all_algs(datafile, savedir, make_model;
 end
    
 
+# TODO: Not used
 # copied over from mixed test
+# if parameter_history is a list of the flex1_params over iterations this should work.
 function plot_flexi_history_ode(parameter_history, alg, savedir, datafile, true_flexi_params; n_intermediate = 10)
     # parameter_history entries are the full struct (p_classical + flex1_params);
     # this panel only cares about the flexi-function slice
-    parameter_history = [p.flex1_params for p in parameter_history]
-
+    # parameter_history = [p.flex1_params for p in parameter_history] # TODO: make compatible with not mixed 
+    parameter_history = [p for p in parameter_history] # TODO: make compatible with not mixed
     @load datafile flexi_args
 
     ig = parameter_history[1]
@@ -289,7 +290,7 @@ function plot_flexi_history_ode(parameter_history, alg, savedir, datafile, true_
     xs_flexi = range(0.0, 1.0, length = 500)
     fig = Figure(size = (800, 600))
     ax = CairoMakie.Axis(fig[1, 1], xlabel = "x", ylabel = "f(x)",
-        title = "Pipeline flexi-function history ($alg)")
+        title = "Flexi-function history ($alg)")
 
     for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
         ys = [FlexiFunctions.evaluate_decompress(x, params) for x in xs_flexi]

@@ -1,7 +1,9 @@
 struct ModelFlexiLV <: AbstractFlexiBasicModel
     # u0::Vector{Float64}  # Not used for algebraic model, but kept for compatibility for now...
     # params::ComponentArray{Float64}'
-    params::AbstractVector{Float64}
+    # params::AbstractVector{Float64}
+    params_repr_ig::ComponentArray{Float64} # biophysical parameters mapped to spaces suitable for optimization # log, logit, sqrt transforms
+    params_derepresented_ig::ComponentArray{Float64}
     u0::AbstractVector{Float64}
     reltol::Float64
     abstol::Float64
@@ -12,13 +14,26 @@ function make_ModelFlexiLV(;flexi_dofs=5, reltol = 1e-3, abstol = 1e-8)
    
  
     
-    params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
+    # params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
+    p_classical = ComponentArray(a = 1.0) # not used (here for compatibility)
+
+    flex1_params = FlexiFunctions.generate_flexi_ig(flexi_dofs)
+    params_repr_ig = ComponentArray(
+        p_classical = p_classical,
+        flex1_params = flex1_params
+    )
+    params_derepresented_ig = ComponentArray(
+        p_classical = p_classical,
+        flex1_params = deepcopy(flex1_params)
+    ) # for compatibility with other models, but not really used for this model
+    
     
     u0 = [1.0, 2.5]
 
 
     return ModelFlexiLV(
-       params,
+       params_repr_ig,
+       params_derepresented_ig,
        u0,
        reltol,
        abstol)
@@ -31,9 +46,9 @@ function make_rhs(model::ModelFlexiLV; gradient_mode = false)
         x, y = u
         # println(x)
         x_mod = x/(x+1)
-        a = 1.0
+        a = 1.0 # hardcode, do not use classical params.
         # du .= FlexiFunctions.evaluate_decompress.(u, Ref(params); gradient_mode=gradient_mode)
-        du[1] = (x+1) * FlexiFunctions.evaluate_decompress(x_mod, params; gradient_mode = gradient_mode) - x*y
+        du[1] = (x+1) * FlexiFunctions.evaluate_decompress(x_mod, params.flex1_params; gradient_mode = gradient_mode) - x*y
         du[2] = -a*y + x*y
 
         return nothing

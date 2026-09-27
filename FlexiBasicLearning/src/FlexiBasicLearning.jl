@@ -68,8 +68,9 @@ include("learning_protocols/simplex.jl")
 # include functions for fitting and plotting
 include("fit_flexi.jl")
 include("fit_mult_algs.jl")
+include("fit_mixed.jl")
 include("sim_data.jl") # use naming functions in other files
-include("loss_slicing.jl") # for looking at loss vs. params and other stuff.
+# include("loss_slicing.jl") # for looking at loss vs. params and other stuff.
 include("gd_tracking.jl") # for looking at where gd goes
 
 
@@ -93,7 +94,8 @@ const model_makers = Dict(
     "flexi1"      => d -> () -> FlexiBasicLearning.make_ModelFlexi1(;flexi_dofs=d),
     "flexi1_alg1" => d -> () -> FlexiBasicLearning.make_ModelFlexiAlg(;flexi_dofs=d),  # same structure for now
     "flexi1_ode1" => d -> () -> FlexiBasicLearning.make_ModelFlexiODE(;flexi_dofs=d),
-    "flexi1_lv2" => (d, tol) -> () -> FlexiBasicLearning.make_ModelFlexiLV(;flexi_dofs = d, reltol = tol)
+    "flexi1_lv2" => d -> () -> FlexiBasicLearning.make_ModelFlexiLV(;flexi_dofs = d),
+    "mixed_flexi1_lv2" => d -> () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
 )
 
 

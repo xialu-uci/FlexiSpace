@@ -5,12 +5,12 @@ using ComponentArrays
 # using OrdinaryDiffEqCore
 using OrdinaryDiffEq  
 # using SciMLBase
-#TODO: modify to include flexi_args in datafile
+#TODO: execute outside of src
 
-function sim_data(num_points, dofs; std = 0.05, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
+function sim_data(num_points, dofs; std = 0.05, a = 1.0, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
 
     # helper true flexi params
-    true_params = shape(dofs)
+    true_params = shape(dofs; a = a)
     # true_func = func_form(dofs; shape = shape)
 
     x_max, true_func, flexi_arg_func = func_form(true_params; for_sim = true)
@@ -47,37 +47,53 @@ end
 # println(params)
 
 # flexi shapes
-function crooked_flexi(dofs)
-    params = zeros(dofs)
+function crooked_flexi(dofs; a =1.0)
+    flex1_params = zeros(dofs)
     # make all odd indices 1
-    params[1:2:end] .= 1.0
+    flex1_params[1:2:end] .= 1.0
     # make it unit
-    return params / LinearAlgebra.norm(params)
-end
-
-# TODO: something looks weird about gt flexi for y' = flexi(y) with dofs = 3 for cu and cd shapes.
-function cu_flexi(dofs) 
-    params = collect(1:dofs)
-    return params / LinearAlgebra.norm(params)
-end
-
-function cd_flexi(dofs)
-    params = collect(dofs:-1:1)   # explicit descending step
-    return params / LinearAlgebra.norm(params)
-end
-
-function id_flexi(dofs)
-    params = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(dofs)
+    flex1_params = flex1_params / LinearAlgebra.norm(flex1_params)
+    params = ComponentArray(
+        p_classical  = ComponentArray(a = a),
+        flex1_params = flex1_params
+    )
     return params
+end
+
+function cu_flexi(dofs; a = 1.0)
+    flex1_params = collect(1:dofs)
+    flex1_params = flex1_params / LinearAlgebra.norm(flex1_params)
+    params = ComponentArray(
+        p_classical  = ComponentArray(a = a),
+        flex1_params = flex1_params
+    )
+    return params
+end
+
+function cd_flexi(dofs; a = 1.0)
+    flex1_params = collect(dofs:-1:1)   # explicit descending step
+    flex1_params = flex1_params / LinearAlgebra.norm(flex1_params)
+    params = ComponentArray(
+        p_classical  = ComponentArray(a = a),
+        flex1_params = flex1_params
+    )
+end
+
+function id_flexi(dofs; a = 1.0)
+    flex1_params = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(dofs)
+    params = ComponentArray(
+        p_classical  = ComponentArray(a = a),
+        flex1_params = flex1_params
+    )
 end    
 
 # --- new shape: outputs a mixed ComponentArray(p_classical=(a=...), flex1_params=...) ---
-function mixed_id_flexi(dofs; a = 1.0)
-    return ComponentArray(
-        p_classical  = ComponentArray(a = a),
-        flex1_params = id_flexi(dofs),
-    )
-end
+# function mixed_id_flexi(dofs; a = 1.0)
+#     return ComponentArray(
+#         p_classical  = ComponentArray(a = a),
+#         flex1_params = id_flexi(dofs),
+#     )
+# end
 
 # # test: passed
 # function make_flexi1_func(dofs; shape = crooked_flexi)
@@ -94,18 +110,18 @@ end
 # try this instead? useful for other stuff
 function make_flexi1_func(params; for_sim = false)
     if for_sim
-        return 1.0, x -> FlexiFunctions.evaluate_decompress(x, params), x -> x
+        return 1.0, x -> FlexiFunctions.evaluate_decompress(x, params.flex1_params), x -> x
     else
-        return x -> FlexiFunctions.evaluate_decompress(x, params)
+        return x -> FlexiFunctions.evaluate_decompress(x, params.flex1_params)
     end
 end
 
 
 function make_flexi1_alg1_func(params; for_sim = false)
     if for_sim
-        return 1.0, x -> x .* FlexiFunctions.evaluate_decompress(x, params), x -> x
+        return 1.0, x -> x .* FlexiFunctions.evaluate_decompress(x, params.flex1_params), x -> x
     else
-        return x -> x .* FlexiFunctions.evaluate_decompress(x, params)
+        return x -> x .* FlexiFunctions.evaluate_decompress(x, params.flex1_params)
     end
 end
 
@@ -113,7 +129,7 @@ end
 
 function make_flexi1_ode1_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8,
                                 x_max = 1e4, for_sim = false)
-    f = y -> FlexiFunctions.evaluate_decompress(y, params)  # dy/dx = f(y)
+    f = y -> FlexiFunctions.evaluate_decompress(y, params.flex1_params)  # dy/dx = f(y)
     dydx(y, p, x) = f(y)
 
     # stop integration if y exits [0, 1]
@@ -136,19 +152,19 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
     #   - a bare flexi-params vector/ComponentArray (old style; `a` comes from the kwarg)
     #   - a mixed ComponentArray(p_classical=(a=...,), flex1_params=...), e.g. from
     #     mixed_id_flexi -- `a` is read out of params.p_classical.a, kwarg ignored
-    if params isa ComponentArray && haskey(params, :p_classical)
-        a = params.p_classical.a
-        flex_params = params.flex1_params
-    else
-        flex_params = params
-    end
+    # if params isa ComponentArray && haskey(params, :p_classical)
+    a = params.p_classical.a
+    flex_params = params.flex1_params
+    # else
+    #     flex_params = params
+    # end
 
     f = z -> FlexiFunctions.evaluate_decompress(z, flex_params)  # expects arg in [0,1)
 
     function dydx(y, p, x)
         y1, y2 = y
-        y1_mod = y1 / (y1 + 1)
-        dy1 = (y1 + 1) * f(y1_mod) - y1 * y2
+        y1_mod = y1 / (y1 + 1.0) # test flexi_arg range
+        dy1 = (y1 + 1.0) * f(y1_mod) - y1 * y2 # test flexi_arg range
         dy2 = -a * y2 + y1 * y2
         return [dy1, dy2]
     end
@@ -157,7 +173,7 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
     sol = solve(prob, alg; reltol = reltol, abstol = abstol)
 
     if for_sim
-        return sol.t[end], x -> sol(x), x -> sol(x)[1]/(sol(x)[1]+1)
+        return sol.t[end], x -> sol(x), x -> sol(x)[1]/(sol(x)[1]+1.0)
     else
         return x -> sol(x)
     end
@@ -203,7 +219,7 @@ function shape_name(s)
     s === crooked_flexi && return "crooked"
     s === cu_flexi       && return "cu"
     s === cd_flexi       && return "cd"
-    s === mixed_id_flexi  && return "mixed_id"
+    s === id_flexi  && return "id"
     error("Unknown shape: $s")
 end
 
@@ -227,19 +243,18 @@ end
 # # # funcs = [make_flexi1_ode1_func]
 # # funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
+# a = 1.0
 # funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
-
-# num_points = [40]
-# dofs = [4]
-# skeys = ["id"]
-# funcs = [FlexiBasicLearning.make_flexi1_lv_func]
+# num_points = [4, 8, 16, 32, 64, 128, 254, 512]
+# dofs = [4, 8, 16, 32, 64, 128, 254, 512]
+# skeys = ["crooked", "cu", "cd","id"]
 
 
 # for n in num_points, f in funcs, d in dofs, sname in skeys
 #     fname = func_name(f)
 #     s        = FlexiBasicLearning.shapes[sname]
-#     save_name = joinpath("w_true_params_flexi_args/no-noise/$(fname)joinpath("w_true_params_flexi_args/no-noise/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
+#     save_name = joinpath("mixed_true_params/no-noise/a$(a)/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
 #     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
 # end
 
-# sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")
+# # sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")

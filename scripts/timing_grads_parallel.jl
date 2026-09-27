@@ -6,7 +6,7 @@ using Zygote
 using FiniteDiff
 using ForwardDiff
 
-
+# TODO: move outside of src
 # load args
 diffname, fname, sname, dof_str, np_str = ARGS
 

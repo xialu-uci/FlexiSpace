@@ -8,9 +8,11 @@ using LinearAlgebra
 # ------------------------------------------------------------------
 # Static config (shared across all jobs)
 # ------------------------------------------------------------------
-num_points = 20
-expdir  = "../FlexiSpaceLocal/exp/08112026-apricot"
-datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
+num_points = 16
+
+expdir  = "../FlexiSpaceLocal/tests/09162026_refactor_mod_def"
+datadir = "../FlexiSpaceLocal/data/mixed_true_params/no-noise"
+println(isdir(datadir))
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,
 # func_string used for plot titles.
@@ -35,16 +37,17 @@ datadir = "../FlexiSpaceLocal/data/w_true_params/no-noise"
 # length(ARGS) < 3 && usage_and_exit()
 
 # # uncomment for HPC
-func_key  = ARGS[1]
-d         = parse(Int, ARGS[2])
-shape_key = ARGS[3]
+# func_key  = ARGS[1]
+# d         = parse(Int, ARGS[2])
+# shape_key = ARGS[3]
 
 
 
 # uncomment for local testing
-# func_key  = "flexi1"
-# d         = 3
-# shape_key = "crooked"
+
+func_key  = "flexi1_ode1"
+d         = 4
+shape_key = "crooked"
 
 
 haskey(FlexiBasicLearning.func_info, func_key) || error("Unknown func_key '$func_key'. Options: $(collect(keys(FlexiBasicLearning.func_info)))")

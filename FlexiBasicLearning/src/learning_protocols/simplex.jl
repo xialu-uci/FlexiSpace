@@ -1,7 +1,7 @@
 function simplex_learn(learning_problem, p_repr_ig)
 
     function obj_func(x, p)
-        p_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(x, p_repr_ig,learning_problem.model) # this is where params are updated # the trick is the x is the actual params we want. 
+        p_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(x, p_repr_ig, learning_problem.model) # this is where params are updated # the trick is the x is the actual params we want. 
         # only pass through p_repr_ig for the keys
         return FlexiBasicLearning.get_loss(p_repr; learning_problem=learning_problem)
     end
@@ -20,7 +20,10 @@ function simplex_learn(learning_problem, p_repr_ig)
     # parameter_history = logging ? [] : nothing # generally not loging
     
     callback, loss_history = FlexiBasicLearning.create_standard_callback("simplex", config)
-    
+    # println(classical_params_array)
+    # println(FlexiBasicLearning.represent(learning_problem.model.p_derepresented_lowerbounds, learning_problem.model))
+    # println(FlexiBasicLearning.represent(learning_problem.model.p_derepresented_upperbounds, learning_problem.model))
+
     prob = Optimization.OptimizationProblem(
         obj_func,
         classical_params_array;
@@ -40,7 +43,7 @@ function simplex_learn(learning_problem, p_repr_ig)
     final_params_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(sol.u, p_repr_ig, learning_problem.model)
     #final_params_derepr = CombiCellModelLearning.derepresent_all(final_params_repr, intPoints, learning_problem.model)
 
-    result = (fit_params_repr = final_params_repr, loss_history = loss_history) # returns p_repr
+    result = (fit_params_repr = final_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(final_params_repr, learning_problem.model), loss_history = loss_history) # returns p_repr
 
     return result
 
