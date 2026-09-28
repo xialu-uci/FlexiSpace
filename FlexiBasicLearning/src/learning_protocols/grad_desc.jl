@@ -25,12 +25,15 @@ function gradient_descent_learn(learning_problem, ig;
     # timing
     t0 = Base.time()
 
+    p_classical_fixed = copy(ig.p_classical)   # outside, once
+
     function flexi_loss(flexi_params, p)
         # TODO: make this compatible with the unmixed models too
         params = ComponentArray(
-            p_classical = ig.p_classical,
+            p_classical = p_classical_fixed,
             flex1_params = flexi_params
         )
+        # println("params in flexi_loss = $params")
         loss = get_loss(params; learning_problem=learning_problem, gradient_mode=true)
     
        return loss
@@ -43,7 +46,7 @@ function gradient_descent_learn(learning_problem, ig;
 
     if config.time_grads
 
-        n = length(ig)
+        n = length(ig.flex1_params)
 
         grad_eval_count = Ref(0)
 
@@ -53,6 +56,8 @@ function gradient_descent_learn(learning_problem, ig;
         # a single unified gradient! function, chosen by `differ`
         grad_fn! = if differ == :zygote
             (G, params, p) -> begin
+                #println(length(G))
+                #println(Zygote.gradient(θ -> flexi_loss(θ, p), params))
                 g = Zygote.gradient(θ -> flexi_loss(θ, p), params)[1]
                 G .= g
             end

@@ -47,6 +47,7 @@ function ig_fit_all_algs(datafile, savedir, make_model;
     # gd_time, gd_result = fit_gd(my_prob, ig; optimizers=optimizers, maxiters=maxiters, save_parameters=save_parameters, time_grads=time_grads)
     for optimizer in optimizers
         println("Using optimizer: $optimizer")
+        println("ig = $ig")
         gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; 
         optimizer=optimizer, differ = differ, 
         maxiters=maxiters, save_parameters = save_parameters,

@@ -8,11 +8,17 @@ using ForwardDiff
 
 # TODO: move outside of src
 # load args
-diffname, fname, sname, dof_str, np_str = ARGS
+# diffname, fname, sname, dof_str, np_str = ARGS
 
 # make d, np ints
-d = parse(Int, dof_str)
-np = parse(Int, np_str)
+## test:
+diffname = "fd"
+fname = "flexi1"
+sname = "crooked"
+d = 4
+np = 32
+# d = parse(Int, dof_str)
+# np = parse(Int, np_str)
 
 # make diffname differ
 differs = [:zygote, :forwarddiff, :finitediff]
@@ -51,7 +57,7 @@ end
 
 # define my locations
 expdir_base = "../FlexiSpaceLocal/exp/08302026/fixed-gts"
-datadir_base = "../FlexiSpaceLocal/data/w_true_params_flexi_args/no-noise" #TODO: need to rsync my data to FlexiSpaceLocal --> email hpc3 people
+datadir_base = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0" #TODO: need to rsync my data to FlexiSpaceLocal --> email hpc3 people
 
 gt = 4
 
