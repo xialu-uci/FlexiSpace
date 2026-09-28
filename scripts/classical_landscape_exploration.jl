@@ -24,7 +24,7 @@ str_to_opt = Dict("cmaes" => :cmaes, "bfgs" => :bfgs)
 # for d in dofs
 
 # uncomment for HPC
-d         = parse(Int, ARGS[1])
+d         = parse(Int, ARGS[1]) # fails in this line
 opt_str = ARGS[2]
 optimizer = str_to_opt[opt_str]
 
