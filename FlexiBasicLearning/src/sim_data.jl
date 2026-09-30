@@ -245,8 +245,10 @@ end
 
 # a = 1.0
 # funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
-# num_points = [4, 8, 16, 32, 64, 128, 254, 512]
-# dofs = [4, 8, 16, 32, 64, 128, 254, 512]
+# # num_points = [4, 8, 16, 32, 64, 128, 254, 512]
+# # dofs = [4, 8, 16, 32, 64, 128, 254, 512]
+# num_points = [1024,2048]
+# dofs = [32]
 # skeys = ["crooked", "cu", "cd","id"]
 
 

@@ -9,12 +9,12 @@
 #SBATCH --partition=standard  
 #SBATCH --cpus-per-task=4 ## (-c) number of cpus to allocate (PER ARRAY JOB)
 #SBATCH --mem=16G  # Use all available memory on the node
-#SBATCH --array=1-675%50 ## number of array tasks #TODO: replace with 1-45 after initial testing
+#SBATCH --array=1-540%50 ## number of array tasks #TODO: replace with 1-45 after initial testing
 #SBATCH --ntasks=1 ## (-n) number of tasks to launch (PER ARRAY JOB)
 #SBATCH --constraint=intel  # Use Intel nodes hopefully prevents some of the cache issues
 #SBATCH --error=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.err    ## Slurm error  file, %x - job name, %A job id 
 #SBATCH --output=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.out      ## Slurm output file, %x - job name, %A job id
-#SBATCH --time=0-03:00:00 # Maximum time. # is this per job or summing each job together? 
+#SBATCH --time=0-06:00:00 # Maximum time. # is this per job or summing each job together? 
 
 # error and out are default from the first job I ran?
 
@@ -73,7 +73,7 @@ echo "Arguments: $ARGS"
 
 
 echo "Running timing_grads-parallel.jl" 
-date; /usr/bin/time -v stdbuf -oL julia +1.11.6 --project=FlexiBasicLearning FlexiBasicLearning/src/timing_grads_parallel.jl $ARGS \
+date; /usr/bin/time -v stdbuf -oL julia +1.11.6 --project=FlexiBasicLearning FlexiBasicLearning/scripts/timing_grads_parallel.jl $ARGS \
 > $OUTPUTPATH/logs/$SLURM_ARRAY_JOB_ID.$RUNNAME.$SLURM_ARRAY_TASK_ID.log 2>&1 ; date
 
 # After job completes, move the logs

@@ -1,22 +1,29 @@
+using FlexiBasicLearning
+using ComponentArrays
+using JLD2
+using Printf
+using Zygote
+using CairoMakie
+
 datafile = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked.jld2"
-savedir_base = "../FlexiSpaceLocal/tests/09232026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/debug-loss-history-plots-cmaes"
+savedir_base = "../FlexiSpaceLocal/exp/09262026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/"
 # mkpath(savedir)
 
 @load datafile true_params
 
-# dofs = [4, 32, 64]
-d = 4
+dofs = [64]
+#d = 4
 
 optimizer = :cmaes
 opt_str = "cmaes"
 
-#for d in dofs
+for d in dofs
 
     make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
 
     # ig_derepr= make_model().params_derepresented_ig
 
-    savedir = joinpath(savedir_base, "fit_w_mixed_flexi1_lv2_crooked$d")
+    savedir = joinpath(savedir_base, "$opt_str/fit_w_mixed_flexi1_lv2_crooked$d")
 
     results_file = joinpath(savedir, "results_$opt_str.jld2")
 
@@ -30,10 +37,10 @@ opt_str = "cmaes"
     
    # push!(results_list, results)
     
-   plot_landscapes(my_prob, results, loss_landscapes, savedir)
+   FlexiBasicLearning.plot_landscapes(my_prob, results, loss_landscapes, savedir)
 
     if optimizer != :cmaes
-        all_param_history, all_grad_history, all_loss_history, flips = concat_gd_result(results, my_prob)
+        all_param_history, all_grad_history, all_loss_history, flips = FlexiBasicLearning.concat_gd_result(results, my_prob, optimizer)
 
         gd_tracker = FlexiBasicLearning.gd_tracking( (gradient_history = all_grad_history, parameter_history = all_param_history), 
             true_params.flex1_params)
@@ -50,6 +57,6 @@ opt_str = "cmaes"
     save(joinpath(savedir, "loss_history_simplex_$opt_str.png"), loss_history_fig)
 
 
-#end
+end
 # add plotting of the flexi and full function histories
 
