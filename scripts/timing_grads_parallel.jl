@@ -6,19 +6,20 @@ using Zygote
 using FiniteDiff
 using ForwardDiff
 
-# TODO: move outside of src
+# uncomment for HPC
 # load args
-# diffname, fname, sname, dof_str, np_str = ARGS
+diffname, fname, sname, dof_str, np_str = ARGS
+d = parse(Int, dof_str)
+np = parse(Int, np_str)
 
-# make d, np ints
+# uncomment for tests
 ## test:
-diffname = "fd"
-fname = "flexi1"
-sname = "crooked"
-d = 4
-np = 32
-# d = parse(Int, dof_str)
-# np = parse(Int, np_str)
+# diffname = "fd"
+# fname = "flexi1"
+# sname = "crooked"
+# d = 4
+# np = 32
+
 
 # make diffname differ
 differs = [:zygote, :forwarddiff, :finitediff]
