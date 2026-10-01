@@ -57,7 +57,7 @@ function make_model_for(f, d)
 end
 
 # define my locations
-expdir_base = "../FlexiSpaceLocal/exp/08302026/fixed-gts"
+expdir_base = "../FlexiSpaceLocal/exp/10012026/fixed-gts"
 datadir_base = "../FlexiSpaceLocal/data/mixed_true_params/no-noise/a1.0" #TODO: need to rsync my data to FlexiSpaceLocal --> email hpc3 people
 
 gt = 4
