@@ -10,8 +10,8 @@ using LinearAlgebra
 # ------------------------------------------------------------------
 num_points = 16
 
-expdir  = "../FlexiSpaceLocal/tests/09162026_refactor_mod_def"
-datadir = "../FlexiSpaceLocal/data/mixed_true_params/no-noise"
+expdir  =  joinpath(FlexiBasicLearning.asset_dir, "tests/09162026_refactor_mod_def")
+datadir = joinpath(FlexiBasicLearning.asset_dir, "data/mixed_true_params/no-noise")
 println(isdir(datadir))
 
 # func_key -> (func, func_string) -- 1-1 correspondence, func used for file naming,

@@ -46,8 +46,8 @@ function find_a_local_minima(flex1_params, learning_problem, savedir; step = 0.0
     return result
 end
 
-datafile = "../FlexiSpaceLocal/data/w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2"
-savedir = "../FlexiSpaceLocal/exp/09082026/lv2_exploration/flexi1lv2-4dof-32obs/mixed_id"
+datafile = joinpath(FlexiBasicLearning.asset_dir, "data/w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")
+savedir = joinpath(FlexiBasicLearning.asset_dir, "exp/09082026/lv2_exploration/flexi1lv2-4dof-32obs/mixed_id")
 mkpath(savedir)
 @load datafile data
 my_prob, my_model = FlexiBasicLearning.set_up_prob(data, () -> FlexiBasicLearning.make_ModelMixedLV(; flexi_dofs = 4), "normalized")

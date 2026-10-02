@@ -1,8 +1,8 @@
 # tests for overloaded fit_cmaes_and_gd()
-using FlexiBasicLearning
-using Random
+# using FlexiBasicLearning
+# using Random
 
-Random.seed!(1234)
+# Random.seed!(1234)
 
 # # test 1: not entering ig should use default ig from model
 # datafile = "../FlexiSpaceLocal/data/flexi1-50dof-20obs/sim_data_crooked.jld2"
@@ -49,23 +49,23 @@ Random.seed!(1234)
 # save_end_loss_table(result3, ig_list, joinpath(savedir, "test3", "end_losses.txt"))
 
 # let's loss slice these same exact ones to see if these plots look nonconvex. They should not.
-true_params = FlexiBasicLearning.crooked_flexi(50)
-arcs = FlexiBasicLearning.loss_from_ig_to_true(ig_list, true_params, learning_problem, joinpath(savedir, "test3"); step= 0.01, plot=true);
+# true_params = FlexiBasicLearning.crooked_flexi(50)
+# arcs = FlexiBasicLearning.loss_from_ig_to_true(ig_list, true_params, learning_problem, joinpath(savedir, "test3"); step= 0.01, plot=true);
 
-# want to print each change in direction of loss for each result
-# print (p,loss)_i if (p,loss)(i-1) > (p,loss)i AND (p<loss)(i+1)< (p,loss)i or vice versa
+# # want to print each change in direction of loss for each result
+# # print (p,loss)_i if (p,loss)(i-1) > (p,loss)i AND (p<loss)(i+1)< (p,loss)i or vice versa
 
-for arc in arcs
-    println(arc.ig)
-    p_range = arc.p_range
-    loss_values = arc.loss_values
-    for i in 2:(length(loss_values)-1)
-        pre = loss_values[i] -loss_values[i-1]
-        post = loss_values[i+1]-loss_values[i]
-        if !(signbit(pre)==signbit(post))
-            println("caught!")
-            println(p_range[i])
-            println(loss_values[i])
-        end
-    end
-end
+# for arc in arcs
+#     println(arc.ig)
+#     p_range = arc.p_range
+#     loss_values = arc.loss_values
+#     for i in 2:(length(loss_values)-1)
+#         pre = loss_values[i] -loss_values[i-1]
+#         post = loss_values[i+1]-loss_values[i]
+#         if !(signbit(pre)==signbit(post))
+#             println("caught!")
+#             println(p_range[i])
+#             println(loss_values[i])
+#         end
+#     end
+# end

@@ -32,7 +32,7 @@ function sim_data(num_points, dofs; std = 0.05, a = 1.0, func_form = make_flexi1
     y_noisy = Y .+ noise
     data = [x y_noisy]
     if !isnothing(save_name)
-        savedir = "../FlexiSpaceLocal/data"
+        savedir = joinpath(FlexiBasicLearning.asset_dir, "data")
         full_path = joinpath(savedir, save_name)
         mkpath(dirname(full_path))
         @save full_path data func_form true_params flexi_args
@@ -245,8 +245,8 @@ end
 
 # a = 1.0
 # funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
-# # num_points = [4, 8, 16, 32, 64, 128, 254, 512]
-# # dofs = [4, 8, 16, 32, 64, 128, 254, 512]
+# # # num_points = [4, 8, 16, 32, 64, 128, 254, 512]
+# # # dofs = [4, 8, 16, 32, 64, 128, 254, 512]
 # num_points = [1024,2048]
 # dofs = [32]
 # skeys = ["crooked", "cu", "cd","id"]

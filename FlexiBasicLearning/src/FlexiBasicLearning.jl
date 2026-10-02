@@ -65,6 +65,10 @@ include("learning_protocols/grad_desc.jl")
 include("learning_protocols/diffevol.jl")
 include("learning_protocols/simplex.jl")
 
+# must be defined before sim_data.jl
+
+const asset_dir = "../FlexiSpaceLocal"
+
 # include functions for fitting and plotting
 include("fit_flexi.jl")
 include("fit_mult_algs.jl")
@@ -75,6 +79,8 @@ include("gd_tracking.jl") # for looking at where gd goes
 
 
 # for my for loops
+
+
 const func_info = Dict(
     "flexi1"      => (FlexiBasicLearning.make_flexi1_func,      "y = f(t)"),
     "flexi1_alg1" => (FlexiBasicLearning.make_flexi1_alg1_func, "y = t \u22c5 f(t)"),
