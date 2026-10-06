@@ -7,13 +7,14 @@ using OrdinaryDiffEq
 # using SciMLBase
 #TODO: execute outside of src
 
-function sim_data(num_points, dofs; std = 0.05, a = 1.0, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
-
+function sim_data(num_points, dofs; x_max =1.0, std = 0.05, a = 1.0, func_form = make_flexi1_func, shape = id_flexi, ode = false, save_name = nothing)
+    #x_max should generally be 1.0 for the algebraic functions and can vary for the ODE functions
     # helper true flexi params
     true_params = shape(dofs; a = a)
     # true_func = func_form(dofs; shape = shape)
 
-    x_max, true_func, flexi_arg_func = func_form(true_params; for_sim = true)
+    # x_max, true_func, flexi_arg_func = func_form(true_params; for_sim = true)
+    true_func, flexi_arg_func = func_form(true_params; x_max = x_max, for_sim = true)
     # num_points must be in
     x = LinRange(0.0,x_max, num_points)
    
@@ -108,18 +109,18 @@ end
 # end
 
 # try this instead? useful for other stuff
-function make_flexi1_func(params; for_sim = false)
+function make_flexi1_func(params; x_max = 1.0, for_sim = false)
     if for_sim
-        return 1.0, x -> FlexiFunctions.evaluate_decompress(x, params.flex1_params), x -> x
+        return x -> x_max * FlexiFunctions.evaluate_decompress(x, params.flex1_params), x_max * x -> x
     else
         return x -> FlexiFunctions.evaluate_decompress(x, params.flex1_params)
     end
 end
 
 
-function make_flexi1_alg1_func(params; for_sim = false)
+function make_flexi1_alg1_func(params; x_max = 1.0, for_sim = false)
     if for_sim
-        return 1.0, x -> x .* FlexiFunctions.evaluate_decompress(x, params.flex1_params), x -> x
+        return x -> x_max * x .* FlexiFunctions.evaluate_decompress(x, params.flex1_params), x -> x_max * x
     else
         return x -> x .* FlexiFunctions.evaluate_decompress(x, params.flex1_params)
     end
@@ -173,7 +174,7 @@ function make_flexi1_lv_func(params; alg = Tsit5(), reltol = 1e-8, abstol = 1e-8
     sol = solve(prob, alg; reltol = reltol, abstol = abstol)
 
     if for_sim
-        return sol.t[end], x -> sol(x), x -> sol(x)[1]/(sol(x)[1]+1.0)
+        return x -> sol(x), x -> sol(x)[1]/(sol(x)[1]+1.0)
     else
         return x -> sol(x)
     end
@@ -244,19 +245,21 @@ end
 # # funcs = [make_flexi1_func, make_flexi1_alg1_func, make_flexi1_ode1_func]
 
 # a = 1.0
-# funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
-# # # num_points = [4, 8, 16, 32, 64, 128, 254, 512]
-# # # dofs = [4, 8, 16, 32, 64, 128, 254, 512]
-# num_points = [1024,2048]
+# # funcs = [FlexiBasicLearning.make_flexi1_func, FlexiBasicLearning. make_flexi1_alg1_func, FlexiBasicLearning.make_flexi1_ode1_func, FlexiBasicLearning.make_flexi1_lv_func]
+# # # # num_points = [4, 8, 16, 32, 64, 128, 254, 512]
+# # # # dofs = [4, 8, 16, 32, 64, 128, 254, 512]
+# funcs = [FlexiBasicLearning.make_flexi1_lv_func]
+# x_max = 5e1
+# num_points = [32]
 # dofs = [4]
-# skeys = ["crooked", "cu", "cd","id"]
+# skeys = ["crooked"]
 
 
 # for n in num_points, f in funcs, d in dofs, sname in skeys
 #     fname = func_name(f)
 #     s        = FlexiBasicLearning.shapes[sname]
-#     save_name = joinpath("mixed_true_params/no-noise/a$(a)/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname).jld2")
-#     sim_data(n, d; std = 0.0, func_form = f, shape = s, save_name = save_name)
+#     save_name = joinpath("mixed_true_params/no-noise/a$(a)/$(fname)-$(d)dof-$(n)obs", "sim_data_$(sname)_tmax$(x_max).jld2")
+#     sim_data(n, d; x_max = x_max, std = 0.0, func_form = f, shape = s, save_name = save_name)
 # end
 
 # # sim_data(32, 4; std= 0.0, func_form = make_flexi1_lv_func, shape = mixed_id_flexi, save_name = "w_true_params_flexi_args/no-noise/flexi1lv2-4dof-32obs/sim_data_mixed_id.jld2")
