@@ -9,7 +9,8 @@
 #SBATCH --partition=standard  
 #SBATCH --cpus-per-task=4 ## (-c) number of cpus to allocate (PER ARRAY JOB)
 #SBATCH --mem=16G  # Use all available memory on the node
-#SBATCH --array=1-540%50 ## number of array tasks #TODO: replace with 1-45 after initial testing
+#SBATCH --array=9,10,19,20,29,30,39,40,49,50,59,60,69,70,79,80,89,90,99,100,109,110,119,120,129,130,139,140,149,150,159,160,169,170,179,180,189,190,199,200,209,210,219,220,229,230,239,240,249,250,259,260,269,270
+         ## number of array tasks 
 #SBATCH --ntasks=1 ## (-n) number of tasks to launch (PER ARRAY JOB)
 #SBATCH --constraint=intel  # Use Intel nodes hopefully prevents some of the cache issues
 #SBATCH --error=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.err    ## Slurm error  file, %x - job name, %A job id 

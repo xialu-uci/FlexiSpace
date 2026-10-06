@@ -3,7 +3,7 @@ using DataFrames
 using CairoMakie
 using Statistics
 
-expdir_base = joinpath(FlexiBasicLearning.asset_dir, "exp/grad-comp-timing/08302026/fixed-gts")
+expdir_base = joinpath(FlexiBasicLearning.asset_dir, "exp/10012026/fixed-gts")
 
 const NUM_FIXED = 32
 const METRIC = :mean_grad_time
