@@ -7,7 +7,7 @@ using CairoMakie
 
 
 
-datafile = joinpath(FlexiBasicLearning.asset_dir, "mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked_tmax50.0.jld2") # higher sampling freq
+datafile = joinpath(FlexiBasicLearning.asset_dir, "data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked_tmax50.0.jld2") # higher sampling freq
 savedir_base = joinpath(FlexiBasicLearning.asset_dir, "exp/10062026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4_tmax50.0/")
 # mkpath(savedir)
 
