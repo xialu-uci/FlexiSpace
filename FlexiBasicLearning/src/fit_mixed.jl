@@ -266,7 +266,7 @@ end
 # need to check that length(results) > 1, else can't compare to previous round
 # return true if exit condition met, else false
 
-function improvement_exit_condition(results; threshold = 1e-6)
+function improvement_exit_condition(results; threshold = 1e-3)
     #println(results)
     i = findlast(!isnothing, results)
     if i>1
