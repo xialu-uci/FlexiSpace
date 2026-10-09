@@ -83,8 +83,8 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     mkpath(savedir) # creates the directory only if it doesn't already exist
     
     
-    results        = Vector{Any}(undef, n_rounds)   # bfgs (a_result) per round
-    loss_landscapes = Vector{Any}(undef, n_rounds)  # loss-vs-a landscape per round's fit
+    results        = Vector{Any}(nothing, n_rounds)   # bfgs (a_result) per round
+    loss_landscapes = Vector{Any}(nothing, n_rounds)  # loss-vs-a landscape per round's fit
     
     # --- Rounds 1-n: simplex finds next a_guess, then bfgs finds flexi ---
     for i in 1:n_rounds
@@ -109,6 +109,8 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
         if !isnothing(exit_condition)
             if exit_condition(results)
                 println("exit condition met at round $i")
+                results = results[1:i]
+                loss_landscapes = loss_landscapes[1:i]
                 break
             end
         end
@@ -260,4 +262,8 @@ end
 # need to check that length(results) > 1, else can't compare to previous round
 # return true if exit condition met, else false
 
-improvement_exit_condition(results; threshold = 1e-3) = length(results) > 1 && (results[end].loss_history[end] - results[end-1].loss_history[end]) < threshold
+function improvement_exit_condition(results; threshold = 1e-6)
+    #println(results)
+    i = findlast(!isnothing, results)
+    return i > 1 && (results[i].loss_history[end] - results[i-1].loss_history[end]) < threshold
+end
