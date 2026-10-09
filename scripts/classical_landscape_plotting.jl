@@ -5,19 +5,19 @@ using Printf
 using Zygote
 using CairoMakie
 
-datafile = joinpath(FlexiBasicLearning.asset_dir, "mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked.jld2")
-savedir_base = joinpath(FlexiBasicLearning.asset_dir, "exp/09262026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4/")
+datafile = joinpath(FlexiBasicLearning.asset_dir, "data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked_tmax50.0.jld2")
+savedir_base = joinpath(FlexiBasicLearning.asset_dir, "exp/10062026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4_tmax50.0/")
 # mkpath(savedir)
 
 @load datafile true_params
 
-dofs = [64]
+dofs = [4,8,16,32,64]
 #d = 4
 
-optimizer = :cmaes
-opt_str = "cmaes"
+optimizers = [:cmaes, :bfgs]
+opt_strs = ["cmaes", "bfgs"]
 
-for d in dofs
+for d in dofs, (opt_str, optimizer) in zip(opt_strs, optimizers)
 
     make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
 

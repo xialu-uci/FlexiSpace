@@ -82,7 +82,15 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     
     mkpath(savedir) # creates the directory only if it doesn't already exist
     
-    
+    results_dict = Dict(
+        "datafile" => datafile,
+        "save_dir" => savedir,
+        "my_prob" => my_prob,
+        "ig_derepr" => ig_derepr,
+        "exit_condition" => exit_condition,
+        "exit_condition_met" => false
+    )
+
     results        = Vector{Any}(nothing, n_rounds)   # bfgs (a_result) per round
     loss_landscapes = Vector{Any}(nothing, n_rounds)  # loss-vs-a landscape per round's fit
     
@@ -111,6 +119,8 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
                 println("exit condition met at round $i")
                 results = results[1:i]
                 loss_landscapes = loss_landscapes[1:i]
+                # converged = true
+                results_dict["exit_condition_met"] = true
                 break
             end
         end
@@ -119,15 +129,9 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
     # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
     # println("out of for loop")
-    #TODO: reorganize results and save as follows:
-    results_dict = Dict(
-        "datafile" => datafile,
-        "save_dir" => savedir,
-        "my_prob" => my_prob,
-        "ig_derepr" => ig_derepr,
-        "intermediate_results" => results,
-        "loss_landscapes" => loss_landscapes
-    )
+  
+    results_dict["intermediate_results"] = results
+    results_dict["loss_landscapes"] = loss_landscapes
     
     # final_result = results[end]
     
@@ -265,5 +269,8 @@ end
 function improvement_exit_condition(results; threshold = 1e-6)
     #println(results)
     i = findlast(!isnothing, results)
-    return i > 1 && (results[i].loss_history[end] - results[i-1].loss_history[end]) < threshold
+    if i>1
+        println("exit check loss:", results[i].loss_history[end] - results[i-1].loss_history[end])
+    end
+    return i > 1 && (results[i-1].loss_history[end] - results[i].loss_history[end]) < threshold
 end
