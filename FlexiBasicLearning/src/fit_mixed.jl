@@ -66,7 +66,7 @@ end
 
 # fit a mixed model
 
-function fit_mixed_alg(datafile, savedir, make_model; 
+function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, exit_condition = nothing,
     ig_derepr = nothing, optimizer = :bfgs, differ = Zygote.gradient, maxiters = 10000, 
     save_parameters = false, time_grads = false,
     loss_strategy = "normalized", n_rounds = 3)
@@ -88,15 +88,10 @@ function fit_mixed_alg(datafile, savedir, make_model;
     
     # --- Rounds 1-n: simplex finds next a_guess, then bfgs finds flexi ---
     for i in 1:n_rounds
-        # prev_fit = results[i - 1].fit_params  # derepresented params from previous round's bfgs fit
-        # global guess
+    
     
         simplex_result = FlexiBasicLearning.simplex_learn(my_prob, guess)
 
-        # guess_derepr = FlexiBasicLearning.derepresent_all(simplex_result.fit_params_repr, my_model)
-        # a_guesses[i] = guess_derepr.p_classical.a
-        # a_guess_repr = FlexiBasicLearning.represent_all(simplex_result.fit_params_repr, my_model)
-        # simplex_result.fit_params_repr is guess_repr
         if optimizer == :cmaes
             results[i] = FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
         else
@@ -105,9 +100,19 @@ function fit_mixed_alg(datafile, savedir, make_model;
         end
         guess = results[i].fit_params_repr
         println("saved result $i")
-        loss_landscapes[i] = classical_loss_landscape(guess.flex1_params, my_prob, savedir; step = 0.01, specific_a_value = results[i].fit_params_derepr.p_classical.a)
-        println("saved landscape $i")
-
+        if save_landscapes
+            loss_landscapes[i] = classical_loss_landscape(guess.flex1_params, my_prob, savedir; step = 0.01, specific_a_value = results[i].fit_params_derepr.p_classical.a)
+            println("saved landscape $i")
+        end
+       
+        # here check for exit condition
+        if !isnothing(exit_condition)
+            if exit_condition(results)
+                println("exit condition met at round $i")
+                break
+            end
+        end
+        
     end
     # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
     # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
@@ -247,3 +252,12 @@ function plot_landscapes(my_prob, intermediate_results, loss_landscapes, savedir
     save(joinpath(savedir, "loss_vs_a_$(n_rounds)rounds.png"), fig1)
 
 end
+
+# potential exit conditions
+
+# if loss at end of round is a significant improvement over previous round, continue, else exit
+# in other words if results[end].loss_history[end] - results[end-1].loss_history[end] < threshold, exit
+# need to check that length(results) > 1, else can't compare to previous round
+# return true if exit condition met, else false
+
+improvement_exit_condition(results; threshold = 1e-3) = length(results) > 1 && (results[end].loss_history[end] - results[end-1].loss_history[end]) < threshold
