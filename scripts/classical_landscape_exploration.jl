@@ -15,8 +15,8 @@ savedir_base = joinpath(FlexiBasicLearning.asset_dir, "tests/10122026/lv2_classi
 
 # uncomment for local testing
 d = 4
-optimizer = :cmaes
-opt_str = "cmaes"
+optimizer = :bfgs
+opt_str = "bfgs"
 
 str_to_opt = Dict("cmaes" => :cmaes, "bfgs" => :bfgs)
 
@@ -39,4 +39,4 @@ savedir = joinpath(savedir_base, "$opt_str/fit_w_mixed_flexi1_lv2_crooked$d")
 # results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3, optimizer = optimizer)
 
 # mod to testing
-results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; exit_condition = FlexiBasicLearning.improvement_exit_condition, n_rounds = 10, optimizer = optimizer)
+results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; exit_condition = FlexiBasicLearning.improvement_exit_condition, n_rounds = 20, optimizer = optimizer)
