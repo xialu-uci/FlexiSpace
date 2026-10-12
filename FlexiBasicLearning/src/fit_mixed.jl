@@ -92,14 +92,17 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     )
 
     results        = Vector{Any}(nothing, n_rounds)   # bfgs (a_result) per round
+    simplex_results = Vector{Any}(nothing, n_rounds)   # simplex (a_guess) per round
     loss_landscapes = Vector{Any}(nothing, n_rounds)  # loss-vs-a landscape per round's fit
     
     # --- Rounds 1-n: simplex finds next a_guess, then bfgs finds flexi ---
+    
     for i in 1:n_rounds
     
     
         simplex_result = FlexiBasicLearning.simplex_learn(my_prob, guess)
-
+        simplex_results[i] = simplex_result
+        
         if optimizer == :cmaes
             results[i] = FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
         else
@@ -117,6 +120,7 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
         if !isnothing(exit_condition)
             if exit_condition(results)
                 println("exit condition met at round $i")
+                simplex_results = simplex_results[1:i]
                 results = results[1:i]
                 loss_landscapes = loss_landscapes[1:i]
                 # converged = true
@@ -135,13 +139,13 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     
     # final_result = results[end]
     
-
+    
     if optimizer == :cmaes
-        all_loss_history, flips = concat_gd_result(results, my_prob, optimizer)
-        results_dict["flips"] = flips
+        all_loss_history, all_flips, total_time = concat_gd_result(results, simplex_results, my_prob, optimizer)
+        # results_dict["flips"] = flips
     else
-        all_param_history, all_grad_history, all_loss_history, flips = concat_gd_result(results, my_prob, optimizer)
-        results_dict["flips"] = flips
+        all_param_history, all_grad_history, all_loss_history, all_flips, flexi_flips, total_time = concat_gd_result(results, simplex_results, my_prob, optimizer)
+        # results_dict["flips"] = flips
 
         # final_result.param_history = all_param_history
         # final_result.grad_history = all_grad_history
@@ -149,7 +153,7 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     # final_result.loss_history = all_loss_history
 
     final_result = (fit_params_repr = results[end].fit_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(results[end].fit_params_repr, my_model),
-     loss_history = all_loss_history, optimizer = results[end].optimizer, time = results[end].time,
+     loss_history = all_loss_history, optimizer = results[end].optimizer, time = total_time,
             gradient_history = (optimizer == :cmaes) ? nothing : all_grad_history,
             #parameter_history = config.save_parameters ? parameter_history : nothing,
             parameter_history = (optimizer == :cmaes) ? nothing : all_param_history,
@@ -157,7 +161,8 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
 
 
     results_dict["final_result"] = final_result
-    results_dict["flips"] = flips
+    results_dict["flips"] = all_flips
+    results_dict["flexi_flips"] = (optimizer == :cmaes) ? nothing : flexi_flips
 
     # my_prob
     # intermediate_results = [simplex --> flexi iter 1 result, simplex --> flexi iter 2 result,... final result] # should have all fields of gd (or cmaes)
@@ -174,23 +179,37 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
 
 end
 
-function concat_gd_result(results, my_prob, optimizer)
+function concat_gd_result(results, simplex_results, my_prob, optimizer)
     # if optimizer == :cmaes
     #     all_loss_history = collect(Iterators.flatten([result.loss_history for result in results]))
         
     # end
-    all_loss_history = collect(Iterators.flatten([result.loss_history for result in results]))
-    flips = cumsum([length(result.loss_history) for result in results])
+    println("length of simplex_results: $(length(simplex_results)), length of results: $(length(results))")
+    all_loss_history = collect(Iterators.flatten([vcat(simplex_result.loss_history, result.loss_history) for (simplex_result, result) in zip(simplex_results, results)]))
+    all_flips = cumsum(collect(Iterators.flatten([[length(simplex_result.loss_history) length(result.loss_history)] for (simplex_result, result) in zip(simplex_results, results)])))
+    total_time = sum([result.time for result in results]) + sum([simplex_result.time for simplex_result in simplex_results])
+    # simplex_loss_history = collect(Iterators.flatten([result.loss_history for result in simplex_results]))
+    # simplex_flips = cumsum([length(result.loss_history) for result in simplex_results]) # flips really only used for the gd tracker?
+
+    # flexi_loss_history = collect(Iterators.flatten([result.loss_history for result in results]))
+    # flexi_flips = cumsum([length(result.loss_history) for result in results]) # flips really only used for the gd tracker?
+    # flips = 
+
+    # all loss history is alternating simplex and flexi loss histories
+    # all_loss_history = collect(Iterators.flatten([result.loss_history simplezip(simplex_loss_history, flexi_loss_history)])
+    
+    
+
 
     
     if optimizer == :cmaes
-        return all_loss_history, flips        
+        return all_loss_history, all_flips, total_time       
     end
 
     all_param_history = []
     all_grad_history = []
    #  all_loss_history = []
-    flips = []
+    flexi_flips = []
     
     for result in results
         a_str = @sprintf("%.3e", result.fit_params_derepr.p_classical.a)
@@ -200,9 +219,9 @@ function concat_gd_result(results, my_prob, optimizer)
         append!(all_param_history, param_history)
         append!(all_grad_history, result.gradient_history)
         # append!(all_loss_history, result.loss_history)
-        push!(flips, length(all_param_history))
+        push!(flexi_flips, length(all_param_history))
     end
-    return all_param_history, all_grad_history, all_loss_history, flips
+    return all_param_history, all_grad_history, all_loss_history, all_flips, flexi_flips, total_time
 end
 
 function plot_landscapes(my_prob, intermediate_results, loss_landscapes, savedir)

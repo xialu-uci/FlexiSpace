@@ -1,5 +1,7 @@
 function simplex_learn(learning_problem, p_repr_ig)
 
+    t0 = Base.time()
+
     function obj_func(x, p)
         p_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(x, p_repr_ig, learning_problem.model) # this is where params are updated # the trick is the x is the actual params we want. 
         # only pass through p_repr_ig for the keys
@@ -42,8 +44,8 @@ function simplex_learn(learning_problem, p_repr_ig)
 
     final_params_repr = FlexiBasicLearning.reconstruct_learning_params_from_array(sol.u, p_repr_ig, learning_problem.model)
     #final_params_derepr = CombiCellModelLearning.derepresent_all(final_params_repr, intPoints, learning_problem.model)
-
-    result = (fit_params_repr = final_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(final_params_repr, learning_problem.model), loss_history = loss_history) # returns p_repr
+    time = Base.time() - t0
+    result = (fit_params_repr = final_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(final_params_repr, learning_problem.model), loss_history = loss_history, time = time) # returns p_repr
 
     return result
 

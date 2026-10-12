@@ -193,7 +193,7 @@ function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
 end
 
 
-function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_boundaries = nothing)
+function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_flexi_boundaries = nothing)
     nx = 2
     n = length(all_loss_histories)
     ny = n ÷ nx + (n % nx > 0 ? 1 : 0)
@@ -215,17 +215,30 @@ function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_b
             CairoMakie.linkyaxes!(first_ax, ax)
         end
         
-        # draw simplex boundaries for simplex gd
-        if !isnothing(simplex_boundaries) && !isnothing(simplex_boundaries[i])
-            for boundary in simplex_boundaries[i]
-                CairoMakie.vlines!(ax, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
-                CairoMakie.text!(ax, boundary, 10^0.5, 
-                                 text = "gd", 
-                                 color = :red, 
-                                 fontsize = 10,
-                                 rotation = 90,
-                                 align = (:center, :bottom))
+        # draw simplex boundaries for simplex flexi
+        if !isnothing(simplex_flexi_boundaries) && !isnothing(simplex_flexi_boundaries[i])
+            for j in 1:length(simplex_flexi_boundaries[i]) # highlight using vspan from boundaries[i-1] to [i] alternating colors. first section is simplex then flexi
+                if j == 1
+                    CairoMakie.vspan!(ax, 0.0, simplex_flexi_boundaries[i][j+1], color = (:orange, 0.2))
+                elseif j % 2 == 1
+                    CairoMakie.vspan!(ax, simplex_flexi_boundaries[i][j-1], simplex_flexi_boundaries[i][j], color = (:orange, 0.2))
+                else
+                    CairoMakie.vspan!(ax, simplex_flexi_boundaries[i][j-1], simplex_flexi_boundaries[i][j], color = (:blue, 0.2))
+                end
             end
+            # add a color legend for simplex vs flexi
+            CairoMakie.text!(ax, 0.5, 10^(-1), text = "simplex", color = :orange, fontsize = 10, align = (:right, :top))
+            CairoMakie.text!(ax, 0.5, 10^(-1.5), text = "flexi", color = :blue, fontsize = 10, align = (:right, :top))
+            # for boundary in simplex_flexi_boundaries[i]
+            # for boundary in simplex_boundaries[i]
+            #     CairoMakie.vlines!(ax, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
+            #     CairoMakie.text!(ax, boundary, 10^0.5, 
+            #                      text = "gd", 
+            #                      color = :red, 
+            #                      fontsize = 10,
+            #                      rotation = 90,
+            #                      align = (:center, :bottom))
+            # end
         end
     end
 
