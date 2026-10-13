@@ -9,7 +9,7 @@
 #SBATCH --constraint=intel  # Use Intel nodes hopefully prevents some of the cache issues
 #SBATCH --error=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.err    ## Slurm error  file, %x - job name, %A job id 
 #SBATCH --output=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.out      ## Slurm output file, %x - job name, %A job id
-#SBATCH --time=0-01:00:00 # Maximum time.
+#SBATCH --time=0-02:00:00 # Maximum time.
 
 # hpc3 environment
 module load julia-1.12.5
