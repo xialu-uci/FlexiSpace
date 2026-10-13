@@ -14,7 +14,7 @@
 #SBATCH --constraint=intel  # Use Intel nodes hopefully prevents some of the cache issues
 #SBATCH --error=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.err    ## Slurm error  file, %x - job name, %A job id 
 #SBATCH --output=/pub/stilese/2026/FlexiSpaceLocal/logs/slurm-%A.out      ## Slurm output file, %x - job name, %A job id
-#SBATCH --time=0-06:00:00 # Maximum time. # is this per job or summing each job together? 
+#SBATCH --time=0-08:00:00 # Maximum time. # is this per job or summing each job together? 
 
 # error and out are default from the first job I ran?
 
