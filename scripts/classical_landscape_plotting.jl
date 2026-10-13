@@ -34,6 +34,7 @@ for d in dofs, (opt_str, optimizer) in zip(opt_strs, optimizers)
     final_result = results_dict["final_result"]
     flips = results_dict["flips"]
     flexi_flips = results_dict["flexi_flips"]
+    exit_condition_met = results_dict["exit_condition_met"]
     # my_prob results loss_landscapes
 
     # my_prob, results, loss_landscapes = fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3, optimizer = optimizer)
@@ -55,7 +56,7 @@ for d in dofs, (opt_str, optimizer) in zip(opt_strs, optimizers)
     #     # println(all_loss_history)
     end
     
-    loss_history_fig = FlexiBasicLearning.make_loss_history_figs([final_result.loss_history], [final_result.time], ["simplex --> $opt_str"], simplex_flexi_boundaries = [flips])
+    loss_history_fig = FlexiBasicLearning.make_loss_history_figs([final_result.loss_history], [final_result.time], ["simplex --> $opt_str"], simplex_flexi_boundaries = [flips], exit_condition_met =exit_condition_met)
 
     save(joinpath(savedir, "loss_history_simplex_$opt_str.png"), loss_history_fig)
 

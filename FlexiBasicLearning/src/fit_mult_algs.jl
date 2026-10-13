@@ -193,7 +193,7 @@ function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
 end
 
 
-function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_flexi_boundaries = nothing)
+function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_flexi_boundaries = nothing, exit_condition_met = false)
     nx = 2
     n = length(all_loss_histories)
     ny = n ÷ nx + (n % nx > 0 ? 1 : 0)
@@ -206,7 +206,7 @@ function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_f
         row = (i - 1) ÷ nx + 1
         col = (i - 1) % nx + 1
         ax = CairoMakie.Axis(fig[row, col], xlabel = "iteration", ylabel = "loss", 
-                             title = "$label ($time s)", yscale = log10)
+                             title = "$label ($time s), exit condition met? $exit_condition_met", yscale = log10)
         CairoMakie.lines!(ax, loss_history, color = color, linewidth = 2)
 
         if i == 1
@@ -219,7 +219,7 @@ function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_f
         if !isnothing(simplex_flexi_boundaries) && !isnothing(simplex_flexi_boundaries[i])
             for j in 1:length(simplex_flexi_boundaries[i]) # highlight using vspan from boundaries[i-1] to [i] alternating colors. first section is simplex then flexi
                 if j == 1
-                    CairoMakie.vspan!(ax, 0.0, simplex_flexi_boundaries[i][j+1], color = (:orange, 0.2))
+                    CairoMakie.vspan!(ax, 0.0, simplex_flexi_boundaries[i][j], color = (:orange, 0.2))
                 elseif j % 2 == 1
                     CairoMakie.vspan!(ax, simplex_flexi_boundaries[i][j-1], simplex_flexi_boundaries[i][j], color = (:orange, 0.2))
                 else
@@ -240,6 +240,10 @@ function make_loss_history_figs(all_loss_histories, all_times, labels; simplex_f
             #                      align = (:center, :bottom))
             # end
         end
+
+        # if exit_condition_met
+        #     CairoMakie.text!(ax, 0.5, 10^(-1), text = "exit condition met", color = :green, fontsize = 10, align = (:right, :top))
+        # end
     end
 
     return fig

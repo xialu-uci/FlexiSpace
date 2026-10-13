@@ -246,8 +246,8 @@ function plot_landscapes(my_prob, intermediate_results, loss_landscapes, savedir
         color = :gray, markersize = 14, marker = :star5)
 
     # distinct colors per round
-    round_colors = Makie.wong_colors()[1:n_rounds]
-
+    round_colors = cgrad(:viridis, n_rounds, categorical = true)
+    
     # a_guesses
     a_guesses = [result.fit_params_derepr.p_classical.a for result in intermediate_results]
     

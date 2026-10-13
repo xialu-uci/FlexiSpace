@@ -49,7 +49,7 @@ julia -e 'using LinearAlgebra; println("BLAS threads: ", BLAS.get_num_threads())
 SOURCEPATH=/pub/stilese/2026/FlexiSpace 
 OUTPUTPATH=../FlexiSpaceLocal/exp # just for logging
 
-RUNNAME=flexi-${SLURM_ARRAY_TASK_ID}
+RUNNAME=mixed-${SLURM_ARRAY_TASK_ID}
 
 
 cd $SOURCEPATH
