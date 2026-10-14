@@ -8,15 +8,15 @@ using CairoMakie
 
 
 datafile = joinpath(FlexiBasicLearning.asset_dir, "data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked_tmax50.0.jld2") # higher sampling freq
-savedir_base = joinpath(FlexiBasicLearning.asset_dir, "exp/10132026/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4_tmax50.0/")
+savedir_base = joinpath(FlexiBasicLearning.asset_dir, "test/10142026_rf-removing-redundant-pkg-loads/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4_tmax50.0/")
 # mkpath(savedir)
 
 @load datafile true_params
 
 # uncomment for local testing
-# d = 4
-# optimizer = :cmaes
-# opt_str = "cmaes"
+d = 4
+optimizer = :cmaes
+opt_str = "cmaes"
 
 str_to_opt = Dict("cmaes" => :cmaes, "bfgs" => :bfgs)
 
@@ -24,9 +24,9 @@ str_to_opt = Dict("cmaes" => :cmaes, "bfgs" => :bfgs)
 # for d in dofs
 
 # uncomment for HPC
-d         = parse(Int, ARGS[1]) # fails in this line
-opt_str = ARGS[2]
-optimizer = str_to_opt[opt_str]
+# d         = parse(Int, ARGS[1]) # fails in this line
+# opt_str = ARGS[2]
+# optimizer = str_to_opt[opt_str]
 
 
 make_model = () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)

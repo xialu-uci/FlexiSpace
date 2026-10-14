@@ -22,6 +22,10 @@ include("FlexiFunctions.jl")
 
 using .FlexiFunctions
 
+# for plotting
+# using CairoMakie
+
+
 
 export LinearAlgebra, ComponentArrays, FlexiFunctions, Random, JLD2
 

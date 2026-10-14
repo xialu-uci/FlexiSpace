@@ -1,8 +1,12 @@
-using FlexiBasicLearning
-using ComponentArrays
-using JLD2
-using Printf
-using Zygote
+
+# TODO: test can I include this file in FlexiBasicLearnign without having to have using thesePackages in this file?
+# using FlexiBasicLearning
+# using ComponentArrays
+# using JLD2
+# using Printf
+# using Zygote
+
+
 using CairoMakie
 # goal: explore classical loss landscape for lv2 (nondim). 
 # sim data: ground truth is a = 1.0, dofs = 8, shape = crooked, num_points = 32
@@ -41,12 +45,12 @@ function classical_loss_landscape(flex1_params, learning_problem, savedir; step 
     Threads.@threads for i in 1:n
         a = a_grid[i]
         p_classical_derepr = ComponentArray(a = a)
-        p_classical_repr = FlexiBasicLearning.represent(p_classical_derepr, learning_problem.model)
+        p_classical_repr = represent(p_classical_derepr, learning_problem.model) # FlexiBasicLearning.represent(p_classical_derepr, learning_problem.model)
         params_repr = ComponentArray(
             p_classical = p_classical_repr,
             flex1_params = flex1_params
         )
-        loss_values[i] = FlexiBasicLearning.get_loss(params_repr; learning_problem = learning_problem)
+        loss_values[i] = get_loss(params_repr; learning_problem = learning_problem) # FlexiBasicLearning.get_loss(params_repr; learning_problem = learning_problem)
     end
 
     # find local minima as a separate vectorized pass (excluding endpoints)
@@ -73,11 +77,11 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     @load datafile data
     
     
-    my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
+    my_prob, my_model = set_up_prob(data, make_model, loss_strategy) # FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
     if isnothing(ig_derepr)
         guess = deepcopy(my_model.params_repr_ig)
     else
-        guess = FlexiBasicLearning.represent_all(ig_derepr, my_model)
+        guess = represent_all(ig_derepr, my_model) # FlexiBasicLearning.represent_all(ig_derepr, my_model)
     end
     
     mkpath(savedir) # creates the directory only if it doesn't already exist
@@ -100,14 +104,14 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     for i in 1:n_rounds
     
     
-        simplex_result = FlexiBasicLearning.simplex_learn(my_prob, guess)
+        simplex_result = simplex_learn(my_prob, guess) # FlexiBasicLearning.simplex_learn(my_prob, guess)
         simplex_results[i] = simplex_result
         
         if optimizer == :cmaes
-            results[i] = FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
+            results[i] = cmaes_learn(my_prob, simplex_result.fit_params_repr) # FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
         else
-            results[i] = FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer,
-                        maxiters = 10000, save_parameters = true)
+            results[i] = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
+         # FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
         end
         guess = results[i].fit_params_repr
         println("saved result $i")
@@ -130,14 +134,10 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
         end
         
     end
-    # simplex_result = FlexiBasicLearning.simplex_learn(my_prob, a1_result.fit_params; maxiters = 10000, save_parameters = true)
-    # a_guess_for_gd = simplex_result.fit_params_repr.flex1_params
-    # println("out of for loop")
   
     results_dict["intermediate_results"] = results
     results_dict["loss_landscapes"] = loss_landscapes
     
-    # final_result = results[end]
     
     
     if optimizer == :cmaes
@@ -152,13 +152,13 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
     end
     # final_result.loss_history = all_loss_history
 
-    final_result = (fit_params_repr = results[end].fit_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(results[end].fit_params_repr, my_model),
+    final_result = (fit_params_repr = results[end].fit_params_repr, fit_params_derepr = derepresent_all(results[end].fit_params_repr, my_model),
      loss_history = all_loss_history, optimizer = results[end].optimizer, time = total_time,
             gradient_history = (optimizer == :cmaes) ? nothing : all_grad_history,
             #parameter_history = config.save_parameters ? parameter_history : nothing,
             parameter_history = (optimizer == :cmaes) ? nothing : all_param_history,
             )
-
+                # fit_params_derepr = FlexiBasicLearning.derepresent_all(results[end].fit_params_repr, my_model)
 
     results_dict["final_result"] = final_result
     results_dict["flips"] = all_flips
@@ -213,10 +213,7 @@ function concat_gd_result(results, simplex_results, my_prob, optimizer)
     
     for result in results
         a_str = @sprintf("%.3e", result.fit_params_derepr.p_classical.a)
-        # fig_flexi = FlexiBasicLearning.plot_flexi_history_ode(result.parameter_history, "adam_a$(a_str)", savedir, datafile, flex1_params)
-        param_history = [FlexiBasicLearning.derepresent_all(p, my_prob.model) for p in result.parameter_history] #TODO: should update grad_desc history collection to store a as well
-        #grad_history = [g for g in result.gradient_history]
-        append!(all_param_history, param_history)
+        param_history = [derepresent_all(p, my_prob.model) for p in result.parameter_history] # [FlexiBasicLearning.derepresent_all(p, my_prob.model) for p in result.parameter_history] 
         append!(all_grad_history, result.gradient_history)
         # append!(all_loss_history, result.loss_history)
         push!(flexi_flips, length(all_param_history))
