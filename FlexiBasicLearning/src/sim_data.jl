@@ -1,5 +1,5 @@
 # first let's simulate data with no noise (from Jun)
-using FlexiBasicLearning
+# using FlexiBasicLearning
 using JLD2
 using ComponentArrays
 # using OrdinaryDiffEqCore
@@ -33,7 +33,7 @@ function sim_data(num_points, dofs; x_max =1.0, std = 0.05, a = 1.0, func_form =
     y_noisy = Y .+ noise
     data = [x y_noisy]
     if !isnothing(save_name)
-        savedir = joinpath(FlexiBasicLearning.asset_dir, "data")
+        savedir = joinpath(asset_dir, "data") # FlexiBasicLearning.asset_dir
         full_path = joinpath(savedir, save_name)
         mkpath(dirname(full_path))
         @save full_path data func_form true_params flexi_args
@@ -42,10 +42,7 @@ function sim_data(num_points, dofs; x_max =1.0, std = 0.05, a = 1.0, func_form =
     return data
     
 end
-# using FlexiBasicLearning
 
-# params = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(5)
-# println(params)
 
 # flexi shapes
 function crooked_flexi(dofs; a =1.0)
@@ -81,7 +78,7 @@ function cd_flexi(dofs; a = 1.0)
 end
 
 function id_flexi(dofs; a = 1.0)
-    flex1_params = FlexiBasicLearning.FlexiFunctions.generate_flexi_ig(dofs)
+    flex1_params = FlexiFunctions.generate_flexi_ig(dofs) #FlexiBasicLearning.
     params = ComponentArray(
         p_classical  = ComponentArray(a = a),
         flex1_params = flex1_params
