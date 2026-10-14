@@ -1,6 +1,6 @@
 using Optimization, OptimizationCMAEvolutionStrategy #OptimizationEvolutionary
 using Statistics
-using FlexiBasicLearning
+# using FlexiBasicLearning
 
 # example cmaes usage
 # rosenbrock(x, p) = (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
@@ -53,9 +53,7 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     best_flexi_params = nothing
     
 
-    # function flexi_loss(params, p)
-    #    return FlexiBasicLearning.get_loss(params; learning_problem=learning_problem)
-    # end
+
     function flexi_loss(flexi_params, p)
         # TODO: make this compatible with the unmixed models too
         params = ComponentArray(
@@ -182,8 +180,9 @@ function cmaes_learn(learning_problem, ig; upper_bound_multiplier=10.0)
     # TODO: modify to be a result with fields
     time = Base.time() - t0
     println("cmaes time:$time ")
-    result = (fit_params_repr = fit_params_repr, fit_params_derepr = FlexiBasicLearning.derepresent_all(fit_params_repr, learning_problem.model), optimizer = :cmaes,
+    result = (fit_params_repr = fit_params_repr, fit_params_derepr = derepresent_all(fit_params_repr, learning_problem.model), optimizer = :cmaes,
      loss_history = loss_history, time = time)
+     # fit_params_derepr = FlexiBasicLearning.derepresent_all(fit_params_repr, learning_problem.model)
     return result
 end# CMA-ES Learning Protocol Implementation
 
