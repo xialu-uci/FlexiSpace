@@ -2,7 +2,8 @@
 
 #SBATCH --job-name=flexi-instantiate  ## job name
 #SBATCH -A jallard_lab     ## account to charge # this is the change
-#SBATCH --partition=standard  #SBATCH --cpus-per-task=4 ## (-c) number of cpus to allocate (PER ARRAY JOB)
+#SBATCH --partition=standard  
+#SBATCH --cpus-per-task=4 ## (-c) number of cpus to allocate (PER ARRAY JOB)
 #SBATCH --mem=16G  # Use all available memory on the node
 #SBATCH --array=1-1 ## number of array tasks
 #SBATCH --ntasks=1 ## (-n) number of tasks to launch (PER ARRAY JOB)
