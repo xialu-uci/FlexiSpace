@@ -1,12 +1,12 @@
 # what plots are useful to make for monitoring gd slow?
 # already checking the grad norms in not slow
 #    for ndofs = 2 could just plot loss vs. params?
-using FlexiBasicLearning
+# using FlexiBasicLearning
 using CairoMakie
 
 # TODO: TEST this most certainly breaks with the parameter structure change, need to update to use the new parameter structure
 
-function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10)
+function end_to_end_gd_tracking(results_all_ig; func_form = make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10) # FlexiBasicLearning.make_fleix1_func 
     # load datafile from results_all_ig
     datafile = results_all_ig[1]["datafile"] # datafile is the same for all results in results_all_ig
     @load datafile true_params # this should be find, will be a CompononetArray with p_classical and flex1_params if function needs that
@@ -23,7 +23,7 @@ function end_to_end_gd_tracking(results_all_ig; func_form = FlexiBasicLearning.m
         savedir = ig["save_dir"]
         # datafile = result["datafile"]
         for (alg, gd_result) in zip(optimizers, gd_results)
-            result_gd_tracker = FlexiBasicLearning.gd_tracking(gd_result, true_flexi_params)
+            result_gd_tracker = gd_tracking(gd_result, true_flexi_params) # FlexiBasicLearning.gd_tracking(gd_result, true_flexi_params)
             # plot stuff
             plot_gd_tracker(result_gd_tracker, alg, savedir)
             plot_param_history(gd_result, alg, savedir, datafile; func_form = func_form, func_string = func_string, n_points = n_points, n_intermediate = n_intermediate)
@@ -54,7 +54,7 @@ function flexi_equiv(gt, dofs)
     end
 
     x = collect(0.0:1/dofs:1.0)
-    y = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x, Ref(gt))
+    y = FlexiFunctions.evaluate_decompress.(x, Ref(gt)) # FlexiBasicLearning.
     dy = [y[i+1]-y[i] for i in 1:dofs]
     return sqrt.(dy)
 
@@ -141,7 +141,7 @@ function plot_param_history(result, alg, savedir, datafile; func_string = "y = f
     #     true_flexi_params = true_params # kept for compatibility with curr sim data format (TODO: modify sim_data format)
     # end
 
-    labels = FlexiBasicLearning.func_form_labels(func_form) 
+    labels = func_form_labels(func_form)  # FlexiBasicLearning.func_form_labels(func_form)
 
     x_data = data[:, 1]
     y_data = data[:, 2:end] # n×k, for second figure
@@ -193,7 +193,7 @@ function plot_param_history(result, alg, savedir, datafile; func_string = "y = f
 
     # ---- fig2: full model output, may be multi-component ----
     #TODO: this will need to be modified for mixed models (take full_parameter_history)
-    n_outputs = size(FlexiBasicLearning.as_matrix(y_data), 2)
+    n_outputs = size(as_matrix(y_data), 2) # FlexiBasicLearning.as_matrix
     y_labels = n_outputs == 1 ? ["y"] : ["y$j" for j in 1:n_outputs]
 
     fig2 = Figure(size = (800, 400 * n_outputs))
@@ -203,14 +203,14 @@ function plot_param_history(result, alg, savedir, datafile; func_string = "y = f
 
     for (params, label, color, style) in zip(params_list, param_labels, colors, styles)
         params_func = func_form(params) # I think this should work but it could be a breaking point
-        ys = FlexiBasicLearning.as_matrix([params_func(x) for x in xs])   # n_points × n_outputs
+        ys = as_matrix([params_func(x) for x in xs])   # FlexiBasicLearning.as_matrix # n_points × n_outputs
         for j in 1:n_outputs
             lines!(ax2[j], xs, ys[:, j]; label = label, color = color, linestyle = style)
         end
     end
 
     # plot data points on top, one column per output
-    y_data_mat = FlexiBasicLearning.as_matrix(y_data)
+    y_data_mat = as_matrix(y_data) # FlexiBasicLearning.as_matrix
     for j in 1:n_outputs
         CairoMakie.scatter!(ax2[j], x_data, y_data_mat[:, j], label = "data", markersize = 10, color = (:red, 0.4))
         axislegend(ax2[j], position = :rt)
