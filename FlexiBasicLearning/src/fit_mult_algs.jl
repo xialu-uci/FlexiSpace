@@ -1,5 +1,5 @@
 using JLD2
-using FlexiBasicLearning
+# using FlexiBasicLearning
 using CairoMakie
 using LinearAlgebra
 using Random
@@ -20,7 +20,7 @@ function ig_fit_all_algs(datafile, savedir, make_model;
     @load datafile data
     
     
-    my_prob, my_model = FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
+    my_prob, my_model = set_up_prob(data, make_model, loss_strategy) # FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
     if isnothing(ig)
         ig = deepcopy(my_model.params_repr_ig)
     end
@@ -37,7 +37,7 @@ function ig_fit_all_algs(datafile, savedir, make_model;
 
     if !time_grads
         # skip cmaes if timing grads
-        cmaes_result = FlexiBasicLearning.cmaes_learn(my_prob, ig)
+        cmaes_result = cmaes_learn(my_prob, ig) # FlexiBasicLearning.cmaes_learn(my_prob, ig)
         result["cmaes_result"] = cmaes_result # time in cmaes_result
         # save cmaes results
         # @save joinpath(savedir, "cmaes_result.jld2") cmaes_result # maybe no save
@@ -48,11 +48,11 @@ function ig_fit_all_algs(datafile, savedir, make_model;
     for optimizer in optimizers
         println("Using optimizer: $optimizer")
         println("ig = $ig")
-        gd_result = FlexiBasicLearning.gradient_descent_learn(my_prob, ig; 
+        gd_result = gradient_descent_learn(my_prob, ig; 
         optimizer=optimizer, differ = differ, 
         maxiters=maxiters, save_parameters = save_parameters,
         time_grads = time_grads)
-        result["gd_$(optimizer)_result"] = gd_result # time in gd_result
+        result["gd_$(optimizer)_result"] = gd_result # time in gd_result , FlexiBasicLearning. removed
     end
     
     result["optimizers"] = optimizers 
@@ -100,7 +100,7 @@ function ig_make_fitting_figs(result)
     @load datafile true_params
     @load datafile flexi_args
 
-    labels = FlexiBasicLearning.func_form_labels(func_form) 
+    labels = func_form_labels(func_form)  # FlexiBasicLearning.func_form_labels(func_form) 
 
     x_data = data[:, 1]
     y_data = data[:, 2:end]
@@ -121,9 +121,9 @@ function ig_make_fitting_figs(result)
             y_labels = labels.y_labels, labels = labels_fits)
 
     # flexifunction-only overlay
-    flexi_true = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params.flex1_params))
-    flexi_cmaes = FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params.flex1_params))
-    flexi_gd_list = [FlexiBasicLearning.FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params.flex1_params)) for gd_fit_params in gd_fit_params_list]
+    flexi_true = FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params.flex1_params)) # FlexiBasicLearning.
+    flexi_cmaes = FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params.flex1_params)) # FlexiBasicLearning.
+    flexi_gd_list = [FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params.flex1_params)) for gd_fit_params in gd_fit_params_list] # FlexiBasicLearning.
     flexi_pred_list = vcat([flexi_cmaes], flexi_gd_list)
     labels_flexi = vcat(["cmaes flexi"], ["gd flexi ($optimizer)" for optimizer in optimizers])
 
