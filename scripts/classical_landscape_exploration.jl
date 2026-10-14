@@ -8,13 +8,13 @@ using CairoMakie
 
 
 datafile = joinpath(FlexiBasicLearning.asset_dir, "data/mixed_true_params/no-noise/a1.0/flexi1lv2-4dof-32obs/sim_data_crooked_tmax50.0.jld2") # higher sampling freq
-savedir_base = joinpath(FlexiBasicLearning.asset_dir, "test/10142026_rf-removing-redundant-pkg-loads/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4_tmax50.0/")
+savedir_base = joinpath(FlexiBasicLearning.asset_dir, "test/10142026_adding-gd-swaps/lv2_classical_landscape_exploration/gt-mixed_flexi1_lv2_a1.0-crooked4_tmax50.0/")
 # mkpath(savedir)
 
 @load datafile true_params
 
 # uncomment for local testing
-d = 4
+d = 8
 optimizer = :bfgs
 opt_str = "bfgs"
 
@@ -39,4 +39,4 @@ savedir = joinpath(savedir_base, "$opt_str/fit_w_mixed_flexi1_lv2_crooked$d")
 # results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3, optimizer = optimizer)
 
 # mod to testing
-results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; exit_condition = FlexiBasicLearning.improvement_exit_condition, n_rounds = 3, optimizer = optimizer) # TODO: remember to change back to 50 for actual experiments
+results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; exit_condition = FlexiBasicLearning.improvement_exit_condition, n_rounds = 3, optimizer = optimizer) # TODO: swap to 50 for HPC run

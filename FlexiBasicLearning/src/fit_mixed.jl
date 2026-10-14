@@ -70,11 +70,10 @@ end
 # fit a mixed model
 
 function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, exit_condition = nothing,
-    ig_derepr = nothing, optimizer = :bfgs, differ = Zygote.gradient, maxiters = 10000, 
+    ig_derepr = nothing, optimizer = :bfgs, back_up_optimizer = :adam, differ = Zygote.gradient, maxiters = 10000, 
     save_parameters = false, time_grads = false,
     loss_strategy = "normalized", n_rounds = 3)
     @load datafile data
-    
     
     my_prob, my_model = set_up_prob(data, make_model, loss_strategy) # FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
     if isnothing(ig_derepr)
@@ -109,7 +108,12 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
         if optimizer == :cmaes
             results[i] = cmaes_learn(my_prob, simplex_result.fit_params_repr) # FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
         else
-            results[i] = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
+            results[i] = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true, back_up_optimizer = back_up_optimizer) # FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
+            # extension
+            # final_grad_norm = LinearAlgebra.norm(results[i].gradient_history[end])
+            # if final_grad_norm > 1e-4
+            #     println("Warning: final gradient norm $(final_grad_norm) exceeds threshold 1e-4 for round $i")
+            # end
          # FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
         end
         guess = results[i].fit_params_repr
@@ -122,6 +126,7 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
         # here check for exit condition
         if !isnothing(exit_condition)
             if exit_condition(results)
+                # escape exit with wiggle here.
                 println("exit condition met at round $i")
                 simplex_results = simplex_results[1:i]
                 results = results[1:i]
@@ -177,6 +182,37 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
 
 
 end
+
+function flexi_wiggle(flexi_params, wiggle_amount)
+    # wiggle_amount is a scalar, flexi_params is a vector of length dofs
+    # returns a vector of length dofs
+    return flexi_params .+ wiggle_amount .* randn(length(flexi_params))
+end
+
+# function extended_mixed_learning_routine(datafile, savedir, make_model; n_rounds = 3, loss_tol = 1e-4, grad_tol = 1e-4)
+#     optimizers = [:bfgs, :adam, :cmaes]
+#     exit_condition = improvement_exit_condition
+#     opt_results = Dict{Symbol, Any}()
+#     ig_derepr = nothing
+#     for optimizer in optimizers
+#         results_dict = fit_mixed_alg(datafile, savedir, make_model; n_rounds = n_rounds, optimizer = optimizer, exit_condition = exit_condition, ig_derepr = ig_derepr)
+#         opt_results[optimizer] = results_dict
+#         # exit_condition_met = results_dict["exit_condition_met"]
+#         final_loss = results_dict["final_result"].loss_history[end]
+#         if optimizer != :cmaes
+#             final_grad = results_dict["final_result"].gradient_history[end]
+#         end
+#         # break if final loss or grad are below thresholds
+#         if final_loss < loss_tol || (optimizer == :cmaes || LinearAlgebra.norm(final_grad) < grad_tol)
+#             println("last flexi optimizer $optimizer")
+#             break
+#         end
+#         ig_derepr = results_dict["final_result"].fit_params_derepr
+#     end
+#     # rethink format of the return here... what do I want to see plots of?
+#     return opt_results
+
+# end
 
 function concat_gd_result(results, simplex_results, my_prob, optimizer)
     # if optimizer == :cmaes

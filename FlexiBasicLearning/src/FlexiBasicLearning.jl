@@ -74,7 +74,7 @@ include("learning_protocols/simplex.jl")
 const asset_dir = "../FlexiSpaceLocal"
 
 # include functions for fitting and plotting
-include("fit_flexi.jl")
+# include("fit_flexi.jl")
 include("fit_mult_algs.jl")
 include("fit_mixed.jl")
 include("sim_data.jl") # use naming functions in other files

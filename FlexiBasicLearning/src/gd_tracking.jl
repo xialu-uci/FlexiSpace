@@ -4,7 +4,6 @@
 # using FlexiBasicLearning
 using CairoMakie
 
-# TODO: TEST this most certainly breaks with the parameter structure change, need to update to use the new parameter structure
 
 function end_to_end_gd_tracking(results_all_ig; func_form = make_flexi1_func, func_string = "y = f(x)", n_points = 100, n_intermediate = 10) # FlexiBasicLearning.make_fleix1_func 
     # load datafile from results_all_ig

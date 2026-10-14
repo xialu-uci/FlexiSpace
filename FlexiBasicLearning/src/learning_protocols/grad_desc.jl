@@ -14,6 +14,7 @@ using ForwardDiff
 # takes p_repr.flex1_params
 function gradient_descent_learn(learning_problem, ig; 
     optimizer = :gradient_descent, 
+    back_up_optimizer = nothing, # use after checking if final gradient norm is small enough
     differ = :zygote, # also try ForwardDiff.gradient, FiniteDiff.grad, FiniteDiff.finite_difference_gradient
     learning_rate=0.01, # for adam
     linesearch=nothing, # for gd or bfgs
@@ -84,6 +85,7 @@ function gradient_descent_learn(learning_problem, ig;
     loss_history = Float64[]
     best_loss = Ref(Inf)
     best_params = Ref{Any}(nothing)
+    opt_swap = false # flag to indicate if we have swapped to backup optimizer
     # grad_norm_history = Float64[]
     
 
@@ -162,6 +164,30 @@ function gradient_descent_learn(learning_problem, ig;
         println("Total gradient evaluations: $(grad_eval_count[])")
     end
 
+    if config.save_parameters && length(loss_history) < maxiters && !isnothing(back_up_optimizer)
+        final_grad_norm = LinearAlgebra.norm(gradient_history[end])
+        if final_grad_norm > 1e-4
+            println("Warning: final gradient norm $(final_grad_norm) exceeds threshold 1e-4")
+            println("Attempting to refine solution using backup optimizer: $back_up_optimizer")
+            println("loss history length: $(length(loss_history)), best loss: $(best_loss[])")
+            # Use the best parameters found so far as the initial guess for the backup optimizer
+            opt_swap = true
+            backup_start = length(loss_history) + 1  # Start from the iteration where the best loss was found
+            backup_prob = Optimization.OptimizationProblem(optf, best_params[])
+            backup_alg = build_optimizer(back_up_optimizer; learning_rate=learning_rate, linesearch=linesearch)
+            backup_sol = solve(backup_prob, backup_alg; callback=callback, maxiters=maxiters)
+            println("Backup optimizer final loss: $(backup_sol.objective)")
+            if backup_sol.objective < best_loss[]
+                println("Backup optimizer improved the solution. Updating best parameters.")
+                best_loss[] = backup_sol.objective
+                best_params[] = copy(backup_sol.u)
+            else
+                println("Backup optimizer did not improve the solution.")
+            end
+        end
+    end
+    println("after backup loss history length: $(length(loss_history)), best loss: $(best_loss[])")
+  
     time = Base.time() - t0
     println("Gradient descent ($optimizer) time: $time")
 
@@ -175,6 +201,7 @@ function gradient_descent_learn(learning_problem, ig;
     full_parameter_history = config.save_parameters ? [ComponentArray(p_classical = ig.p_classical, flex1_params = p) for p in parameter_history] : nothing
     result = (fit_params_repr = fit_params_repr, fit_params_derepr = derepresent_all(fit_params_repr, learning_problem.model),
      loss_history = loss_history, optimizer = optimizer, time = time,
+            back_up_optimizer = back_up_optimizer, backup_start = opt_swap ? backup_start : nothing,
             gradient_history = config.save_parameters ? gradient_history : nothing,
             #parameter_history = config.save_parameters ? parameter_history : nothing,
             parameter_history = config.save_parameters ? full_parameter_history : nothing,
