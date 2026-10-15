@@ -65,7 +65,7 @@ function dist(u,v)
     return LinearAlgebra.norm(u-v)
 end
 
-function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing)
+function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing, back_up_opt_idxs = nothing, back_up_opt_usage= nothing)
     iters = 1:length(gd_tracker.norms)
 
     fig = Figure(size = (900, 900))
@@ -119,7 +119,9 @@ function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing)
     end
     # lines!(ax3, iters, gd_tracker.dists)
 
-    
+    if !isnothing(back_up_opt_idxs)
+        
+    end
 
     save(joinpath(savedir, "gd_tracker_$alg.png"), fig)
     return fig
