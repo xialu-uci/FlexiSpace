@@ -82,16 +82,35 @@ function fw(x::AbstractVector, params, model::ModelMixedLV; gradient_mode = fals
     prob = ODEProblem(rhs, model.u0,tspan, params)
    
     
-    sol = solve(prob, Tsit5(); reltol = model.reltol, abstol = model.abstol,
-        saveat = x, 
-        sensealg = ReverseDiffAdjoint()) # could reduce tolerance
+    # sol = solve(prob, Tsit5(); reltol = model.reltol, abstol = model.abstol,
+    #     saveat = x, 
+    #     sensealg = ReverseDiffAdjoint()) # could reduce tolerance
 
-    if sol.retcode != SciMLBase.ReturnCode.Success
-        return nothing   # signal failure upstream
+    # if sol.retcode != SciMLBase.ReturnCode.Success
+    #     # here try a stiffer solver that otherwise operates the same before giving up
+    #     return nothing   # signal failure upstream
+    # end
+
+    # y = permutedims(Array(sol))
+    # return y
+
+    # Try the fast non-stiff solver first, then fall back to stiff solvers.
+    solvers = (Tsit5(), Rodas5P())
+
+    for alg in solvers
+        sol = solve(prob, alg;
+            reltol   = model.reltol,
+            abstol   = model.abstol,
+            saveat   = x,
+            sensealg = ReverseDiffAdjoint())
+
+        if SciMLBase.successful_retcode(sol) && length(sol.t) == length(x)
+            return permutedims(Array(sol))
+        end
     end
 
-    y = permutedims(Array(sol))
-    return y
+    return nothing  # all solvers failed; signal failure upstream
+
 end
 
 # function represent_on_type(p_classical_derepresented,  model_by_type::Type{ModelMixedLV})
