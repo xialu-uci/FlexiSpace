@@ -34,15 +34,28 @@ end
 function gd_tracking(result, gt)
     # gradient history should be the size of the true_flexi_params, no change needed
     # parameter history contains classical params too so get rid of them for gd gd_tracking
+    # get lengths of all params --> use for shading in plot_gd_tracker
+    # get length of end = model_dofs
+    # model_dofs = length(result.parameter_history[end])
+    dofs_history = [length(p.flex1_params) for p in result.parameter_history]
+    # exp: [2,2,2,2,2,2,...2,8,8,...,8]
+    # model_d = dofs_history[end]
+    # flexi_parameter_history = [flexi_equiv(p.flex1_params, model_d) for p in result.parameter_history]
+
     flexi_parameter_history = [p.flex1_params for p in result.parameter_history]
-    if length(flexi_parameter_history[end]) != length(gt)
-        gt = flexi_equiv(gt, length(flexi_parameter_history[end]))
-    end
+    # if length(flexi_parameter_history[end]) != length(gt)
+    #     gt = flexi_equiv(gt, length(flexi_parameter_history[end]))
+    # end
     norms = LinearAlgebra.norm.(result.gradient_history)
     unit_grads = normalize.(result.gradient_history) 
-    dots = dot.(unit_grads, Ref(normalize(gt)))
-    dists = dist.(flexi_parameter_history, Ref(gt))
-    gd_tracker = (norms=norms, dots = dots, dists = dists)
+    # dots = dot.(unit_grads, Ref(normalize(gt)))
+    println(unit_grads[1], unit_grads[end])
+    println(normalize(flexi_equiv(gt, length(unit_grads[1]))))
+    dots = [dot(unit_grad, normalize(flexi_equiv(gt, length(unit_grad)))) for unit_grad in unit_grads]
+    # dists = dist.(flexi_parameter_history, Ref(gt))
+    dists = [dist(params, flexi_equiv(gt, length(params))) for params in flexi_parameter_history]
+
+    gd_tracker = (norms=norms, dots = dots, dists = dists, dofs_history = dofs_history)
     return gd_tracker
 end
 
@@ -76,71 +89,72 @@ function dist(u,v)
     return LinearAlgebra.norm(u-v)
 end
 
-function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing, back_up_opt_endpts = nothing, back_up_opt_usage= nothing)
-    iters = 1:length(gd_tracker.norms)
+# Draw y vs x, coloring each contiguous run of constant dofs differently.
+# Each run extends one point into the next so there are no gaps at transitions.
+function colored_lines!(ax, x, y, dofs, color_map)
+    n = length(dofs)
+    start = 1
+    for i in 2:(n + 1)
+        if i > n || dofs[i] != dofs[start]
+            stop = min(i, n)   # include the first point of the next run to connect segments
+            lines!(ax, x[start:stop], y[start:stop], color = color_map[dofs[start]], linewidth = 2)
+            start = i
+        end
+    end
+end
 
-    fig = Figure(size = (900, 900))
+function add_flip_boundaries!(ax, flip_boundaries)
+    isnothing(flip_boundaries) && return
+    for boundary in flip_boundaries
+        CairoMakie.vlines!(ax, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
+        CairoMakie.text!(ax, boundary, 10^0.5,
+                         text = "simplex", color = :red, fontsize = 10,
+                         rotation = 90, align = (:center, :bottom))
+    end
+end
+
+function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing,
+                         back_up_opt_endpts = nothing, back_up_opt_usage = nothing)
+    iters = collect(1:length(gd_tracker.norms))
+    dofs  = gd_tracker.dofs_history
+
+    # one color per unique dofs value
+    unique_dofs = sort(unique(dofs))
+    palette = Makie.wong_colors()   # or: cgrad(:viridis, length(unique_dofs), categorical = true)
+    color_map = Dict(d => palette[mod1(k, length(palette))] for (k, d) in enumerate(unique_dofs))
+
+    fig = Figure(size = (1000, 900))
 
     ax1 = CairoMakie.Axis(fig[1, 1], ylabel = "‖grad‖", yscale = log10,
-               title = "Gradient norm vs. $alg iteration")
-    lines!(ax1, iters, gd_tracker.norms)
-    if !isnothing(flip_boundaries)
-        for boundary in flip_boundaries
-                CairoMakie.vlines!(ax1, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
-                 CairoMakie.text!(ax1, boundary, 10^0.5, 
-                                 text = "simplex", 
-                                 color = :red, 
-                                 fontsize = 10,
-                                 rotation = 90,
-                                 align = (:center, :bottom))
-            end
-    end
+                          title = "Gradient norm vs. $alg iteration")
+    colored_lines!(ax1, iters, gd_tracker.norms, dofs, color_map)
+    add_flip_boundaries!(ax1, flip_boundaries)
 
     ax2 = CairoMakie.Axis(fig[2, 1], ylabel = "grad ⋅ grad_true",
-               title = "Normalized Gradient ⋅ Truth vs. $alg iteration")
-    lines!(ax2, iters, gd_tracker.dots)
+                          title = "Normalized Gradient ⋅ Truth vs. $alg iteration")
+    colored_lines!(ax2, iters, gd_tracker.dots, dofs, color_map)
     hlines!(ax2, [0.0], color = :gray, linestyle = :dash)
-    if !isnothing(flip_boundaries)
-        for boundary in flip_boundaries
-                CairoMakie.vlines!(ax2, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
-                 CairoMakie.text!(ax2, boundary, 10^0.5, 
-                                 text = "simplex", 
-                                 color = :red, 
-                                 fontsize = 10,
-                                 rotation = 90,
-                                 align = (:center, :bottom))
-            end
-    end
+    add_flip_boundaries!(ax2, flip_boundaries)
 
     ax3 = CairoMakie.Axis(fig[3, 1], xlabel = "iteration", ylabel = "‖u - u_true‖",
-            yscale = log10, title = "Distance to true parameters vs. $alg iteration")
-
+                          yscale = log10, title = "Distance to true parameters vs. $alg iteration")
     nonzero = gd_tracker.dists .> 0
-    lines!(ax3, iters[nonzero], gd_tracker.dists[nonzero])
-    if !isnothing(flip_boundaries)
-        for boundary in flip_boundaries
-                CairoMakie.vlines!(ax3, boundary, color = :red, linestyle = :dash, linewidth = 1.5)
-                CairoMakie.text!(ax3, boundary, 10^0.5, 
-                                 text = "simplex", 
-                                 color = :red, 
-                                 fontsize = 10,
-                                 rotation = 90,
-                                 align = (:center, :bottom))
-            end
-    end
-    # lines!(ax3, iters, gd_tracker.dists)
+    colored_lines!(ax3, iters[nonzero], gd_tracker.dists[nonzero], dofs[nonzero], color_map)
+    add_flip_boundaries!(ax3, flip_boundaries)
 
     if !isnothing(back_up_opt_endpts)
         for endpt in back_up_opt_endpts
             CairoMakie.vspan!(ax1, endpt[1], endpt[2], color = (:green, 0.2))
             CairoMakie.vspan!(ax2, endpt[1], endpt[2], color = (:green, 0.2))
             CairoMakie.vspan!(ax3, endpt[1], endpt[2], color = (:green, 0.2))
-
         end
-
-        CairoMakie.text!(ax3, 0.5, 10^(-1), text = "back-up optimizer", color = :green, fontsize = 10, align = (:right, :top))
-
+        CairoMakie.text!(ax3, 0.5, 10^(-1), text = "back-up optimizer",
+                         color = :green, fontsize = 10, align = (:right, :top))
     end
+
+    # shared legend for dofs
+    elements = [LineElement(color = color_map[d], linewidth = 3) for d in unique_dofs]
+    Legend(fig[1:3, 2], elements, string.(unique_dofs), "dofs")
 
     save(joinpath(savedir, "gd_tracker_$alg.png"), fig)
     return fig
