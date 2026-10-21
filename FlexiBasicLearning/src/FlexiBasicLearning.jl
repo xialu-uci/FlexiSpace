@@ -1,4 +1,5 @@
 module FlexiBasicLearning
+using Revise
 using Statistics
 using Dates
 using LinearAlgebra
@@ -77,6 +78,7 @@ const asset_dir = "../FlexiSpaceLocal"
 # include("fit_flexi.jl")
 include("fit_mult_algs.jl")
 include("fit_mixed.jl")
+include("fit_mixed_rf_scratch.jl")
 include("sim_data.jl") # use naming functions in other files
 # include("loss_slicing.jl") # for looking at loss vs. params and other stuff.
 include("gd_tracking.jl") # for looking at where gd goes
@@ -108,5 +110,9 @@ const model_makers = Dict(
     "mixed_flexi1_lv2" => d -> () -> FlexiBasicLearning.make_ModelMixedLV(;flexi_dofs = d)
 )
 
+# const model_constructors = Dict(
+
+
+# )
 
 end # module FlexiBasicLearning

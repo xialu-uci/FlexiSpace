@@ -1,4 +1,4 @@
-function simplex_learn(learning_problem, p_repr_ig)
+function simplex_learn(learning_problem, p_repr_ig; maxiters = 300000)
 
     t0 = Base.time()
 
@@ -15,7 +15,7 @@ function simplex_learn(learning_problem, p_repr_ig)
 
     # algo is the optimization algorithm (here bbo)
     # maxiters is maximum iterations
-    maxiters = 300000 # not reduced for testing?
+    # maxiters = 300000 # not reduced for testing?
     # callback is a function called at each iteration, s.t. optimzation stops if it returns true
     config = CallbackConfig() # just stores info for callback function in fields
 

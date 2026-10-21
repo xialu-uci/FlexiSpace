@@ -12,11 +12,15 @@ savedir_base = joinpath(FlexiBasicLearning.asset_dir, "exp/10132026/lv2_classica
 @load datafile true_params
 
 dofs = [4,5,8,16,32,64]
-# dofs = [5]
+# dofs = [8]
 #d = 4
 
 optimizers = [:cmaes, :bfgs]
 opt_strs = ["cmaes", "bfgs"]
+
+
+# optimizers = [:bfgs]
+# opt_strs = ["bfgs"]
 
 for d in dofs, (opt_str, optimizer) in zip(opt_strs, optimizers)
 
@@ -36,6 +40,7 @@ for d in dofs, (opt_str, optimizer) in zip(opt_strs, optimizers)
     flips = results_dict["flips"]
     flexi_flips = results_dict["flexi_flips"]
     exit_condition_met = results_dict["exit_condition_met"]
+
     # my_prob results loss_landscapes
 
     # my_prob, results, loss_landscapes = fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3, optimizer = optimizer)
@@ -44,12 +49,17 @@ for d in dofs, (opt_str, optimizer) in zip(opt_strs, optimizers)
     
    FlexiBasicLearning.plot_landscapes(my_prob, results, loss_landscapes, savedir)
 
+   full_fit_fig, flexi_fit_fig = FlexiBasicLearning.single_result_overlay_figs(final_result, datafile, savedir, my_prob.model)
+
     if optimizer != :cmaes
         #  all_param_history, all_grad_history, all_loss_history, flips = FlexiBasicLearning.concat_gd_result(results, my_prob, optimizer)
 
         gd_tracker = FlexiBasicLearning.gd_tracking( (gradient_history = final_result.gradient_history, parameter_history = final_result.parameter_history), 
             true_params.flex1_params)
-        gd_tracker_fig = FlexiBasicLearning.plot_gd_tracker(gd_tracker, opt_str, savedir; flip_boundaries = flexi_flips)
+
+        back_up_opt_endpts = haskey(final_result, :back_up_opt_endpts) ? final_result.back_up_opt_endpts : nothing
+        back_up_opt_usage = haskey(final_result, :back_up_opt_usage) ? final_result.back_up_opt_usage : nothing
+        gd_tracker_fig = FlexiBasicLearning.plot_gd_tracker(gd_tracker, opt_str, savedir; flip_boundaries = flexi_flips, back_up_opt_endpts = back_up_opt_endpts, back_up_opt_usage = back_up_opt_usage)
         
         flexi_history_fig, full_history_fig = FlexiBasicLearning.plot_param_history( (gradient_history = final_result.gradient_history, parameter_history = final_result.parameter_history), opt_str, savedir, datafile)
     # else
@@ -57,6 +67,10 @@ for d in dofs, (opt_str, optimizer) in zip(opt_strs, optimizers)
     #     # println(all_loss_history)
     end
     
+    # plot overlays
+
+    
+
     loss_history_fig = FlexiBasicLearning.make_loss_history_figs([final_result.loss_history], [final_result.time], ["simplex --> $opt_str"], simplex_flexi_boundaries = [flips], exit_condition_met =exit_condition_met)
 
     save(joinpath(savedir, "loss_history_simplex_$opt_str.png"), loss_history_fig)

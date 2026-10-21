@@ -35,8 +35,8 @@ function gd_tracking(result, gt)
     # gradient history should be the size of the true_flexi_params, no change needed
     # parameter history contains classical params too so get rid of them for gd gd_tracking
     flexi_parameter_history = [p.flex1_params for p in result.parameter_history]
-    if length(flexi_parameter_history[1]) != length(gt)
-        gt = flexi_equiv(gt, length(flexi_parameter_history[1]))
+    if length(flexi_parameter_history[end]) != length(gt)
+        gt = flexi_equiv(gt, length(flexi_parameter_history[end]))
     end
     norms = LinearAlgebra.norm.(result.gradient_history)
     unit_grads = normalize.(result.gradient_history) 
@@ -59,13 +59,24 @@ function flexi_equiv(gt, dofs)
 
 end
 
+function full_equiv(full_gt, dofs)
+    println("finding equivalent for $full_gt with $dofs dofs")
+    flexi_gt = full_gt.flex1_params
+    flex1_params = flexi_equiv(flexi_gt, dofs)
+    full_redim = ComponentArray(
+        p_classical = full_gt.p_classical,
+        flex1_params = flex1_params
+    )
+    return full_redim
+end
+
 # sol.u, loss_history, grad_norm_history, grads, params
 
 function dist(u,v)
     return LinearAlgebra.norm(u-v)
 end
 
-function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing, back_up_opt_idxs = nothing, back_up_opt_usage= nothing)
+function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing, back_up_opt_endpts = nothing, back_up_opt_usage= nothing)
     iters = 1:length(gd_tracker.norms)
 
     fig = Figure(size = (900, 900))
@@ -119,8 +130,16 @@ function plot_gd_tracker(gd_tracker, alg, savedir; flip_boundaries = nothing, ba
     end
     # lines!(ax3, iters, gd_tracker.dists)
 
-    if !isnothing(back_up_opt_idxs)
-        
+    if !isnothing(back_up_opt_endpts)
+        for endpt in back_up_opt_endpts
+            CairoMakie.vspan!(ax1, endpt[1], endpt[2], color = (:green, 0.2))
+            CairoMakie.vspan!(ax2, endpt[1], endpt[2], color = (:green, 0.2))
+            CairoMakie.vspan!(ax3, endpt[1], endpt[2], color = (:green, 0.2))
+
+        end
+
+        CairoMakie.text!(ax3, 0.5, 10^(-1), text = "back-up optimizer", color = :green, fontsize = 10, align = (:right, :top))
+
     end
 
     save(joinpath(savedir, "gd_tracker_$alg.png"), fig)

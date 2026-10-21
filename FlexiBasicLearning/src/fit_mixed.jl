@@ -67,6 +67,8 @@ function classical_loss_landscape(flex1_params, learning_problem, savedir; step 
     return result
 end
 
+
+# TODO: split into a function that fits and a function that makes the result/cleans
 # fit a mixed model
 
 function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, exit_condition = nothing,
@@ -110,7 +112,7 @@ function fit_mixed_alg(datafile, savedir, make_model; save_landscapes = true, ex
         else
             result_pt1 = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
             final_grad_norm = LinearAlgebra.norm(result_pt1.gradient_history[end])
-            if final_grad_norm > 1e-4
+            if !isnothing(back_up_optimizer) && final_grad_norm > 1e-4
                 println("Warning: final gradient norm $(final_grad_norm) exceeds threshold 1e-4")
                 println("Attempting to refine solution using backup optimizer: $back_up_optimizer")
                 result_pt2 = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = back_up_optimizer, maxiters = 10000, save_parameters = true)
@@ -223,46 +225,46 @@ end
 
 # end
 
-function concat_gd_result(result_pt1, result_pt2)
+# function concat_gd_result(result_pt1, result_pt2)
 
-    # did back up improve on result
-    back_up_improves = false
-    if result_pt2.loss_history[end] < result_pt1.loss_history[end]
-        back_up_improves = true
-    end
+#     # did back up improve on result
+#     back_up_improves = false
+#     if result_pt2.loss_history[end] < result_pt1.loss_history[end]
+#         back_up_improves = true
+#     end
 
-    fit_params_repr = back_up_improves ? result_pt2.fit_params_repr : result_pt1.fit_params_repr
-    fit_params_derepr = back_up_improves ? result_pt2.fit_params_derepr : result_pt1.fit_params_derepr
+#     fit_params_repr = back_up_improves ? result_pt2.fit_params_repr : result_pt1.fit_params_repr
+#     fit_params_derepr = back_up_improves ? result_pt2.fit_params_derepr : result_pt1.fit_params_derepr
 
-    loss_history = vcat(result_pt1.loss_history, result_pt2.loss_history)
-    split = length(result_pt1.loss_history) 
+#     loss_history = vcat(result_pt1.loss_history, result_pt2.loss_history)
+#     split = length(result_pt1.loss_history) 
 
-    optimizer = result_pt1.optimizer
-    back_up_optimizer = result_pt2.optimizer
-    time = result_pt1.time + result_pt2.time
+#     optimizer = result_pt1.optimizer
+#     back_up_optimizer = result_pt2.optimizer
+#     time = result_pt1.time + result_pt2.time
 
-    save_parameters = !isnothing(result_pt1.gradient_history)
+#     save_parameters = !isnothing(result_pt1.gradient_history)
 
-    if save_parameters
-        gradient_history = vcat(result_pt1.gradient_history, result_pt2.gradient_history)
-        parameter_history = vcat(result_pt1.parameter_history, result_pt2.parameter_history)
-    end
-
-
+#     if save_parameters
+#         gradient_history = vcat(result_pt1.gradient_history, result_pt2.gradient_history)
+#         parameter_history = vcat(result_pt1.parameter_history, result_pt2.parameter_history)
+#     end
 
 
-    result = (fit_params_repr = fit_params_repr, fit_params_derepr = fit_params_derepr,
-        loss_history = loss_history, optimizer = optimizer,  back_up_optimizer = back_up_optimizer, time = time, split = split, 
-        back_up_improves = back_up_improves,
-        # back_up_optimizer = back_up_optimizer, back_up_start = opt_swap ? back_up_start : nothing,
-        # back_up_used = back_up_used,
-        gradient_history = save_parameters ? gradient_history : nothing,
-        #parameter_history = config.save_parameters ? parameter_history : nothing,
-        parameter_history = save_parameters ? parameter_history : nothing)
 
-    return result
 
-end
+#     result = (fit_params_repr = fit_params_repr, fit_params_derepr = fit_params_derepr,
+#         loss_history = loss_history, optimizer = optimizer,  back_up_optimizer = back_up_optimizer, time = time, split = split, 
+#         back_up_improves = back_up_improves,
+#         # back_up_optimizer = back_up_optimizer, back_up_start = opt_swap ? back_up_start : nothing,
+#         # back_up_used = back_up_used,
+#         gradient_history = save_parameters ? gradient_history : nothing,
+#         #parameter_history = config.save_parameters ? parameter_history : nothing,
+#         parameter_history = save_parameters ? parameter_history : nothing)
+
+#     return result
+
+# end
 
 
 function concat_final_result(results, simplex_results, my_prob, optimizer)
@@ -390,3 +392,129 @@ function improvement_exit_condition(results; threshold = 1e-6)
     end
     return i > 1 && (results[i-1].loss_history[end] - results[i].loss_history[end]) < threshold
 end
+
+# WIP: refinement fitting
+
+# function refinement(datafile, savedir, num_dofs; save_landscapes = true, exit_condition = nothing,
+#     ig_derepr = nothing, optimizer = :bfgs, back_up_optimizer = :adam, differ = Zygote.gradient, maxiters = 10000, 
+#     save_parameters = false, time_grads = false,
+#     loss_strategy = "normalized", n_rounds = 3)
+
+#     @load datafile data
+    
+#     my_prob, my_model = set_up_prob(data, make_model, loss_strategy) # FlexiBasicLearning.set_up_prob(data, make_model, loss_strategy)
+#     if isnothing(ig_derepr)
+#         guess = deepcopy(my_model.params_repr_ig)
+#     else
+#         guess = represent_all(ig_derepr, my_model) # FlexiBasicLearning.represent_all(ig_derepr, my_model)
+#     end
+    
+#     mkpath(savedir) # creates the directory only if it doesn't already exist
+    
+#     results_dict = Dict(
+#         "datafile" => datafile,
+#         "save_dir" => savedir,
+#         "my_prob" => my_prob,
+#         "ig_derepr" => ig_derepr,
+#         "exit_condition" => exit_condition,
+#         "exit_condition_met" => false
+#     )
+
+#     results        = Vector{Any}(nothing, n_rounds)   # bfgs (a_result) per round
+#     simplex_results = Vector{Any}(nothing, n_rounds)   # simplex (a_guess) per round
+#     loss_landscapes = Vector{Any}(nothing, n_rounds)  # loss-vs-a landscape per round's fit
+    
+#     # --- Rounds 1-n: simplex finds next a_guess, then bfgs finds flexi ---
+    
+#     for i in 1:n_rounds
+    
+    
+#         simplex_result = simplex_learn(my_prob, guess) # FlexiBasicLearning.simplex_learn(my_prob, guess)
+#         simplex_results[i] = simplex_result
+        
+#         if optimizer == :cmaes
+#             results[i] = cmaes_learn(my_prob, simplex_result.fit_params_repr) # FlexiBasicLearning.cmaes_learn(my_prob, simplex_result.fit_params_repr)
+#         else
+#             result_pt1 = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
+#             final_grad_norm = LinearAlgebra.norm(result_pt1.gradient_history[end])
+#             if !isnothing(back_up_optimizer) && final_grad_norm > 1e-4
+#                 println("Warning: final gradient norm $(final_grad_norm) exceeds threshold 1e-4")
+#                 println("Attempting to refine solution using backup optimizer: $back_up_optimizer")
+#                 result_pt2 = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = back_up_optimizer, maxiters = 10000, save_parameters = true)
+#                 results[i] = concat_gd_result(result_pt1, result_pt2)
+#             else
+#                 results[i] = result_pt1
+                
+              
+#             end
+            
+#          # FlexiBasicLearning.gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
+#         end
+#         guess = results[i].fit_params_repr
+#         println("saved result $i")
+#         if save_landscapes
+#             loss_landscapes[i] = classical_loss_landscape(guess.flex1_params, my_prob, savedir; step = 0.01, specific_a_value = results[i].fit_params_derepr.p_classical.a)
+#             println("saved landscape $i")
+#         end
+       
+#         # here check for exit condition
+#         if !isnothing(exit_condition)
+#             if exit_condition(results)
+#                 # escape exit with wiggle here.
+#                 println("exit condition met at round $i")
+#                 simplex_results = simplex_results[1:i]
+#                 results = results[1:i]
+#                 loss_landscapes = loss_landscapes[1:i]
+#                 # converged = true
+#                 results_dict["exit_condition_met"] = true
+#                 break
+#             end
+#         end
+        
+#     end
+  
+#     results_dict["intermediate_results"] = results
+#     results_dict["loss_landscapes"] = loss_landscapes
+    
+    
+    
+#     if optimizer == :cmaes
+#         all_loss_history, all_flips, total_time = concat_final_result(results, simplex_results, my_prob, optimizer)
+#         # results_dict["flips"] = flips
+#     else
+#         all_param_history, all_grad_history, all_loss_history, all_flips, flexi_flips, total_time, back_up_opt_endpts, back_up_opt_usage = concat_final_result(results, simplex_results, my_prob, optimizer)
+#         # results_dict["flips"] = flips
+
+#         # final_result.param_history = all_param_history
+#         # final_result.grad_history = all_grad_history
+#     end
+#     # final_result.loss_history = all_loss_history
+
+#     final_result = (fit_params_repr = results[end].fit_params_repr, fit_params_derepr = derepresent_all(results[end].fit_params_repr, my_model),
+#      loss_history = all_loss_history, optimizer = results[end].optimizer, time = total_time,
+#             gradient_history = (optimizer == :cmaes) ? nothing : all_grad_history,
+#             #parameter_history = config.save_parameters ? parameter_history : nothing,
+#             parameter_history = (optimizer == :cmaes) ? nothing : all_param_history,
+#             back_up_opt_endpts = (optimizer == :cmaes) ? nothing : back_up_opt_endpts,
+#             back_up_opt_usage = (optimizer == :cmaes) ? nothing : back_up_opt_usage
+#             )
+#                 # fit_params_derepr = FlexiBasicLearning.derepresent_all(results[end].fit_params_repr, my_model)
+
+#     results_dict["final_result"] = final_result
+#     results_dict["flips"] = all_flips
+#     results_dict["flexi_flips"] = (optimizer == :cmaes) ? nothing : flexi_flips
+
+#     # my_prob
+#     # intermediate_results = [simplex --> flexi iter 1 result, simplex --> flexi iter 2 result,... final result] # should have all fields of gd (or cmaes)
+#     # final_result # should have all fields of gd (or cmaes) BUT 
+#         # replace loss_history with all_loss_history, param_history with all_param_history, grad_history with all_grad_history
+#         # add flips 
+#     # loss_landscapes = [using id flexi (ig), using flexi found in iter 1 result, using flexi found in iter 2 result, ..., using flexi found in final result]
+#     @save joinpath(savedir, "results_$optimizer.jld2") results_dict
+    
+#     return results_dict # my_prob, results, loss_landscapes
+#     # save results, loss_landscapes, a_guesses to savedir to reload and plot later
+#     #  @save joinpath(savedir, "results_landscapes_guesses.jld2") my_prob results loss_landscapes
+
+
+# end

@@ -150,6 +150,66 @@ function ig_make_fitting_figs(result)
     return fig1, fig2, fig3
 end
 
+function single_result_overlay_figs(result, datafile, savedir, my_model) # here result is the final result of a single fit, not a list of results
+    # for mixed fitting
+
+    #datafile = result["datafile"]
+    #savedir = result["save_dir"] # for saving
+
+    # general
+    # my_model = result["my_model"]
+    # cmaes_result   = result["cmaes_result"]
+    # optimizers = result["optimizers"]
+    # # gd_results = [result["gd_$(optimizer)_result"] for optimizer in result["optimizers"]]
+    
+
+    
+    # for fit overlay
+    @load datafile data
+    @load datafile func_form
+    @load datafile true_params
+    @load datafile flexi_args
+
+    labels = func_form_labels(func_form)  # FlexiBasicLearning.func_form_labels(func_form) 
+
+    x_data = data[:, 1]
+    y_data = data[:, 2:end]
+    x_grid = collect(LinRange(0.0, maximum(x_data), 500))
+    x_grid_flexi = collect(LinRange(0.0, 1.0, 500))
+    fit_params = result.fit_params_derepr
+    # gd_fit_params_list = [gd_result.fit_params for gd_result in gd_results]
+    true_func = func_form(true_params)
+
+    y_true  = true_func.(x_grid)
+    y_fit = fw(x_grid, fit_params, my_model)
+    # y_gd_list = [fw(x_grid, gd_fit_params, my_model) for gd_fit_params in gd_fit_params_list]
+    y_pred_list = [y_fit]
+    labels_fits = ["fit - $(result.optimizer)"]
+    fig1 = make_fit_overlay_fig(x_data, y_data, x_grid, y_true, y_pred_list;
+            title = labels.title, xlabel = labels.xlabel,
+            y_labels = labels.y_labels, labels = labels_fits)
+
+    # flexifunction-only overlay
+    flexi_true = FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(true_params.flex1_params)) # FlexiBasicLearning.
+    flexi_fit = FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(fit_params.flex1_params)) # FlexiBasicLearning.
+    flexi_pred_list = [flexi_fit]
+    labels_flexi = ["flexi - $(result.optimizer)"]
+    # flexi_cmaes = FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(cmaes_fit_params.flex1_params)) # FlexiBasicLearning.
+    # flexi_gd_list = [FlexiFunctions.evaluate_decompress.(x_grid_flexi, Ref(gd_fit_params.flex1_params)) for gd_fit_params in gd_fit_params_list] # FlexiBasicLearning.
+    # flexi_pred_list = vcat([flexi_cmaes], flexi_gd_list)
+    #labels_flexi = vcat(["cmaes flexi"], ["gd flexi ($optimizer)" for optimizer in optimizers])
+
+    fig2 = make_fit_overlay_fig([0.0], [0.0], x_grid_flexi, flexi_true, flexi_pred_list;
+            title = labels.flexi_title, xlabel = labels.flexi_x_label, labels = labels_flexi, flexi_args = flexi_args)
+            # ([0.0], [0.0], ...)
+  
+    save(joinpath(savedir, "fit_overlay.png"), fig1)
+    save(joinpath(savedir, "flexi_overlay.png"), fig2)
+    # save(joinpath(savedir, "loss_history.png"), fig3)
+
+    return fig1, fig2
+end
+
 function make_fit_overlay_fig(x, y_data, x_grid, y_true, y_pred_list;
         title = "Fit Comparison", labels = ["cmaes fit", "gd fit"], xlabel = "t", y_labels = nothing, flexi_args = nothing)
 
