@@ -105,6 +105,7 @@ function fw(x::AbstractVector, params, model::ModelMixedLV; gradient_mode = fals
             sensealg = ReverseDiffAdjoint())
 
         if SciMLBase.successful_retcode(sol) && length(sol.t) == length(x)
+            # println("solved using $alg")
             return permutedims(Array(sol))
         end
     end

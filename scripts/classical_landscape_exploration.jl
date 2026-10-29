@@ -39,4 +39,4 @@ savedir = joinpath(savedir_base, "$opt_str/fit_w_mixed_flexi1_lv2_crooked$d")
 # results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; n_rounds = 3, optimizer = optimizer)
 
 # mod to testing
-results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; exit_condition = FlexiBasicLearning.improvement_exit_condition, n_rounds = 3, optimizer = optimizer) # TODO: swap to 50 for HPC run
+results_dict = FlexiBasicLearning.fit_mixed_alg(datafile, savedir, make_model; exit_condition = FlexiBasicLearning.improvement_exit_condition, n_rounds = 50, optimizer = optimizer) # TODO: swap to 50 for HPC run

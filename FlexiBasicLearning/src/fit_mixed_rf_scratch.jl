@@ -71,12 +71,17 @@ function fit_mixed_loop(my_prob, guess, optimizer, n_rounds, num_dofs, make_mode
     simplex_results = Vector{Any}(nothing, n_rounds)   # simplex (a_guess) per round
     loss_landscapes = Vector{Any}(nothing, n_rounds)  # loss-vs-a landscape per round's fit
     exit_condition_met = false
+    n = size(my_prob.data)[1]
+    k = div(n,2)
     
     # --- Rounds 1-n: simplex finds next a_guess, then bfgs finds flexi ---
     
     for i in 1:n_rounds
     
-    
+        new_mask = random_mask(n,k)
+        println(length(new_mask))
+
+        my_prob.mask .= new_mask
         simplex_result = simplex_learn(my_prob, guess) # FlexiBasicLearning.simplex_learn(my_prob, guess)
         simplex_results[i] = simplex_result
         
@@ -84,7 +89,7 @@ function fit_mixed_loop(my_prob, guess, optimizer, n_rounds, num_dofs, make_mode
             flexi_results[i] = cmaes_learn(my_prob, simplex_result.fit_params_repr) 
         else 
             # flexi_results[i] = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
-            flexi_results[i] = refined_flexi_opt(my_prob, simplex_result.fit_params_repr, optimizer, make_model_type, num_dofs; start_dofs = 2)
+            flexi_results[i] = refined_flexi_opt(my_prob, simplex_result.fit_params_repr, optimizer, make_model_type, num_dofs; start_dofs = nothing)
 
             # result_pt1 = gradient_descent_learn(my_prob, simplex_result.fit_params_repr; optimizer = optimizer, maxiters = 10000, save_parameters = true)
             # final_grad_norm = LinearAlgebra.norm(result_pt1.gradient_history[end])
@@ -125,13 +130,23 @@ function fit_mixed_loop(my_prob, guess, optimizer, n_rounds, num_dofs, make_mode
     return flexi_results, simplex_results, loss_landscapes, exit_condition_met
 end
 
+function random_mask(n, k)
+    mask = zeros(Bool, n)
+    mask[randperm(n)[1:k]] .= true
+    return mask
+end
+
 
 #TODO: untested
 # WIP: refinement
 
 function refined_flexi_opt(my_prob, guess, optimizer, make_model_type, num_dofs; start_dofs = 2)
 
-    dofs_list = [start_dofs,num_dofs]
+    if !isnothing(start_dofs)
+        dofs_list = [start_dofs,num_dofs]
+    else
+        dofs_list = [num_dofs]
+    end
     maxiters = 100
     results = Vector{Any}(nothing, length(dofs_list))    
     for (i, d) in enumerate(dofs_list)

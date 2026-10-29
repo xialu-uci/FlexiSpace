@@ -39,6 +39,7 @@ abstract type AbstractFlexiModel <: AbstractModel end
 # include("shared_model_functions.jl")
 
 
+# TODO: I want to be able to change the mask for minibatching
 @kwdef struct LearningProblem{M<:AbstractModel}
     data::Matrix{Float64} # modified to match data structure
     model::M

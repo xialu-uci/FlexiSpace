@@ -1,7 +1,9 @@
 function get_loss(params; learning_problem::LearningProblem{M}, gradient_mode = false) where {M<:AbstractModel}
-    x = learning_problem.data[:,1]
-    y = learning_problem.data[:,2:end]
-
+   
+    data = learning_problem.data[learning_problem.mask,:]
+    x = data[:,1]
+    y = data[:,2:end]
+    
 
     # println("y: $y")
     # println(size(y))
